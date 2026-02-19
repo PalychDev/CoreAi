@@ -192,6 +192,62 @@
     .toast.info { background: rgba(20,18,22,0.78); border: 1px solid rgba(255,255,255,0.10); color: #c0bcc8; }
     .toast.info .toast-dot { background: var(--accent); }
 
+
+    /* ── IMAGE ATTACH ─────────────────────────────────── */
+    .attach-btn {
+      width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--border-color-strong);
+      background: rgba(255,255,255,0.04); color: var(--text-muted); cursor: pointer;
+      display: none; align-items: center; justify-content: center; transition: all 0.18s ease;
+      flex-shrink: 0;
+    }
+    .attach-btn.visible { display: flex; }
+    .attach-btn:hover { background: rgba(255,255,255,0.08); color: var(--text-primary); border-color: rgba(255,255,255,0.15); }
+    .attach-btn svg { width: 16px; height: 16px; }
+
+    /* Image preview strip above textarea */
+    .img-preview-wrap {
+      display: none; padding: 10px 14px 0;
+      gap: 8px; flex-wrap: wrap;
+    }
+    .img-preview-wrap.has-img { display: flex; }
+    .img-preview-item {
+      position: relative; width: 72px; height: 72px; border-radius: 10px;
+      overflow: hidden; border: 1px solid var(--border-color-strong);
+      flex-shrink: 0;
+    }
+    .img-preview-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .img-preview-remove {
+      position: absolute; top: 3px; right: 3px; width: 18px; height: 18px;
+      border-radius: 50%; border: none; background: rgba(0,0,0,0.7);
+      color: #fff; font-size: 11px; cursor: pointer; display: flex;
+      align-items: center; justify-content: center; line-height: 1;
+      transition: background 0.15s ease;
+    }
+    .img-preview-remove:hover { background: rgba(239,68,68,0.8); }
+
+    /* Image in chat bubble */
+    .msg-img {
+      max-width: 280px; max-height: 200px; border-radius: 10px;
+      border: 1px solid var(--border-color); display: block;
+      margin-bottom: 8px; object-fit: cover; cursor: zoom-in;
+    }
+
+    /* Lightbox */
+    .lightbox {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.88); z-index: 300;
+      display: none; align-items: center; justify-content: center;
+      backdrop-filter: blur(8px); cursor: zoom-out;
+    }
+    .lightbox.open { display: flex; }
+    .lightbox img { max-width: 90vw; max-height: 90vh; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.8); }
+
+    /* Vision model badge color */
+    .vision-badge {
+      font-size: 10px; padding: 2px 7px; border-radius: 4px;
+      background: rgba(100,180,120,0.12); border: 1px solid rgba(100,200,120,0.2);
+      color: #6dcc8a; font-weight: 500; margin-left: 4px;
+    }
+
     /* Mobile */
     @media (max-width: 768px) {
       .sidebar { position: fixed; left: -280px; z-index: 60; background: rgba(10,10,10,0.95); transition: left 0.3s cubic-bezier(0.4,0,0.2,1); }
@@ -225,6 +281,8 @@
   <div id="noise-bg" class="intro-bg"></div>
   <div id="metal-sheen" class="intro-bg"></div>
   <div id="noise-overlay" class="intro-bg"></div>
+  
+  <div class="lightbox" id="lightbox"><img id="lightboxImg" src="" alt=""></div>
   <div class="toast-wrap" id="toastWrap"></div>
 
   <button class="mob-toggle" id="mobToggle">
@@ -284,7 +342,9 @@
     <div class="input-area intro-ub">
       <div class="input-wrapper">
         <div class="input-box-container">
+          <div class="img-preview-wrap" id="imgPreviewWrap"></div>
           <textarea class="input-box" id="userInput" placeholder="Ask anything..." rows="1" autofocus></textarea>
+          <input type="file" id="imgFileInput" accept="image/*" style="display:none">
           <div class="input-bottom">
             <div class="input-left">
               <span class="input-brand">Core AI</span>
@@ -303,6 +363,9 @@
                 </div>
               </div>
             </div>
+            <button class="attach-btn" id="attachBtn" title="Attach image (Gemini / DeepSeek only)">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13"/></svg>
+              </button>
             <div style="display:flex;gap:6px;align-items:center;">
               <button class="stop-btn" id="stopBtn" title="Stop (Esc)">
                 <svg fill="currentColor" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="2"/></svg>
@@ -338,6 +401,12 @@
     let genning  = false;
     let abort    = null;
     let idleT    = null;
+    let attachedImg = null; // { dataUrl, mimeType, base64 }
+
+    // Models that support vision
+    const VISION_MODELS = ['deepseek/deepseek-v3.2', 'google/gemini-3'];
+    function supportsVision() { return VISION_MODELS.some(m => model.startsWith(m.split('/')[0]) && model.includes(m.split('/')[1]?.split('-')[0] || '')); }
+    function isVision(m) { return m.includes('deepseek') || m.includes('gemini'); }
 
     // ─── ELEMENTS ────────────────────────────────────────
     const sidebar    = document.getElementById('sidebar');
@@ -351,13 +420,23 @@
     const modelDd    = document.getElementById('modelDd');
     const modelDdBtn = document.getElementById('modelDdBtn');
     const modelLbl   = document.getElementById('modelDdLabel');
-    const modelPanel = document.getElementById('modelDdPanel');
+    const modelPanel  = document.getElementById('modelDdPanel');
+    // ✅ Declare before setModel so it can be used inside it
+    const attachBtn      = document.getElementById('attachBtn');
+    const imgFileInput   = document.getElementById('imgFileInput');
+    const imgPreviewWrap = document.getElementById('imgPreviewWrap');
+    const lightbox       = document.getElementById('lightbox');
+    const lightboxImg    = document.getElementById('lightboxImg');
 
     // ─── MODEL DROPDOWN ───────────────────────────────────
     function setModel(v) {
       model = v; localStorage.setItem('ai_model', v);
       modelLbl.textContent = v.split('/').pop();
       modelPanel.querySelectorAll('.model-opt').forEach(o => o.classList.toggle('selected', o.dataset.value === v));
+      // Show attach button only for vision-capable models
+      const canVision = isVision(v);
+      attachBtn.classList.toggle('visible', canVision);
+      if (!canVision && attachedImg) clearImg(); // remove attached image if model changed away
     }
     setModel(model);
     modelDdBtn.addEventListener('click', e => { e.stopPropagation(); modelDd.classList.toggle('open'); });
@@ -429,11 +508,62 @@
     }
     stopBtn.addEventListener('click', () => { if (abort) abort.abort(); });
 
+    // ─── IMAGE ATTACH ──────────────────────────────────────
+
+    function clearImg() {
+      attachedImg = null;
+      imgPreviewWrap.innerHTML = '';
+      imgPreviewWrap.classList.remove('has-img');
+      sendBtn.disabled = (!userInput.value.trim() && !attachedImg) || genning;
+    }
+
+    function showImgPreview(dataUrl) {
+      imgPreviewWrap.innerHTML = '';
+      const item = document.createElement('div');
+      item.className = 'img-preview-item';
+      const img = document.createElement('img');
+      img.src = dataUrl;
+      const rm = document.createElement('button');
+      rm.className = 'img-preview-remove';
+      rm.innerHTML = '✕';
+      rm.title = 'Remove image';
+      rm.addEventListener('click', clearImg);
+      item.appendChild(img); item.appendChild(rm);
+      imgPreviewWrap.appendChild(item);
+      imgPreviewWrap.classList.add('has-img');
+    }
+
+    attachBtn.addEventListener('click', () => {
+      if (!isVision(model)) { toast('Image upload only for Gemini & DeepSeek', 'info'); return; }
+      imgFileInput.click();
+    });
+
+    imgFileInput.addEventListener('change', () => {
+      const file = imgFileInput.files[0];
+      if (!file) return;
+      if (file.size > 20 * 1024 * 1024) { toast('Image too large (max 20MB)', 'error'); return; }
+      const reader = new FileReader();
+      reader.onload = e => {
+        const dataUrl = e.target.result;
+        const mimeType = file.type || 'image/jpeg';
+        const base64 = dataUrl.split(',')[1];
+        attachedImg = { dataUrl, mimeType, base64 };
+        showImgPreview(dataUrl);
+        sendBtn.disabled = false; // image attached, can send
+      };
+      reader.readAsDataURL(file);
+      imgFileInput.value = ''; // reset so same file can be re-selected
+    });
+
+    // Lightbox
+    lightbox.addEventListener('click', () => lightbox.classList.remove('open'));
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') lightbox.classList.remove('open'); });
+
     // ─── TEXTAREA ─────────────────────────────────────────
     userInput.addEventListener('input', () => {
       userInput.style.height = 'auto';
       userInput.style.height = Math.min(userInput.scrollHeight, 200) + 'px';
-      sendBtn.disabled = !userInput.value.trim() || genning;
+      sendBtn.disabled = (!userInput.value.trim() && !attachedImg) || genning;
     });
     userInput.addEventListener('keydown', e => {
       if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (userInput.value.trim() && !genning) send(); }
@@ -479,7 +609,7 @@
       curId = id; const conv = curConv(); if (!conv) return;
       welcome.classList.add('hidden'); chatArea.classList.add('active');
       msgs.innerHTML = '';
-      conv.messages.forEach(m => appendMsg(m.role, m.content, false));
+      conv.messages.forEach(m => appendMsg(m.role, m.content, m._img || null, false));
       renderHist(); scrollBot(); closeMob(); sidebar.classList.remove('expanded');
     }
     function newChat() {
@@ -511,7 +641,7 @@
       });
     }
 
-    function appendMsg(role, content, animate=true) {
+    function appendMsg(role, content, imgData=null, animate=true) {
       const el = document.createElement('div');
       el.className = 'message ' + (role==='user' ? 'user-msg' : 'ai-msg');
       if (!animate) el.style.animation = 'none';
@@ -519,7 +649,15 @@
       const t = now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
       const mShort = model.split('/').pop();
       if (role === 'user') {
-        el.innerHTML = `<div class="msg-body">${esc(content)}</div><span class="msg-time">${t}</span>`;
+        const imgHtml = imgData ? `<img class="msg-img" src="${imgData.dataUrl}" alt="attached image">` : '';
+        el.innerHTML = `<div class="msg-body">${imgHtml}${content ? esc(content) : ''}</div><span class="msg-time">${t}</span>`;
+        // Lightbox on image click
+        if (imgData) {
+          el.querySelector('.msg-img')?.addEventListener('click', () => {
+            lightboxImg.src = imgData.dataUrl;
+            lightbox.classList.add('open');
+          });
+        }
       } else {
         el.innerHTML = `
           <div class="msg-header">${AI_ICON}<span class="msg-sender">Core AI</span><span class="model-badge">${mShort}</span></div>
@@ -541,24 +679,45 @@
     function scrollBot() { requestAnimationFrame(() => { chatArea.scrollTop = chatArea.scrollHeight; }); }
 
     // ─── SEND ─────────────────────────────────────────────
-    async function send(retryArg=null) {
+    async function send(retryArg=null, retryImgArg=null) {
       const text = retryArg || userInput.value.trim();
-      if (!text || genning) return;
+      const img  = retryImgArg || attachedImg;
+      if (!text && !img || genning) return;
       setGen(true);
-      if (!retryArg) { userInput.value=''; userInput.style.height='auto'; }
-      if (!curId) createConv(text);
-      const conv = curConv();
+
+      const sentImg = img; // capture before clearing
       if (!retryArg) {
-        conv.messages.push({role:'user',content:text}); saveConvs();
+        userInput.value=''; userInput.style.height='auto';
+        clearImg();
+      }
+      if (!curId) createConv(text || '(image)');
+      const conv = curConv();
+
+      if (!retryArg) {
+        // Build content for storage (text only, images stored separately as metadata)
+        const storedContent = text || '[image]';
+        conv.messages.push({role:'user', content: storedContent, _img: sentImg ? {dataUrl: sentImg.dataUrl, mimeType: sentImg.mimeType, base64: sentImg.base64} : null});
+        saveConvs();
         welcome.classList.add('hidden'); chatArea.classList.add('active');
-        appendMsg('user', text); scrollBot();
+        appendMsg('user', text, sentImg); scrollBot();
       }
       showThinking();
       abort = new AbortController();
 
+      // Build API messages — include image for vision models
+      const apiMessages = conv.messages.map(m => {
+        if (m._img && isVision(model)) {
+          const parts = [];
+          if (m.content && m.content !== '[image]') parts.push({type:'text', text: m.content});
+          parts.push({type:'image_url', image_url:{url:`data:${m._img.mimeType};base64,${m._img.base64}`}});
+          return {role: m.role, content: parts};
+        }
+        return {role: m.role, content: m.content};
+      });
+
       const body = {
         model, temperature: 0.7, stream: true,
-        messages: [{role:'system',content:SYS}, ...conv.messages.map(m=>({role:m.role,content:m.content}))]
+        messages: [{role:'system',content:SYS}, ...apiMessages]
       };
 
       // Idle watchdog — resets on every chunk
@@ -755,19 +914,27 @@
     // ─── RETRY ────────────────────────────────────────────
     window._retryLast = function() {
       const conv = curConv(); if (!conv) return;
-      let lastUser = null;
+      let lastUser = null, lastImg = null;
       for (let i=conv.messages.length-1;i>=0;i--) {
-        if (conv.messages[i].role==='user') { lastUser=conv.messages[i].content; conv.messages=conv.messages.slice(0,i+1); break; }
+        if (conv.messages[i].role==='user') {
+          lastUser = conv.messages[i].content;
+          lastImg = conv.messages[i]._img || null;
+          conv.messages = conv.messages.slice(0,i+1); break;
+        }
       }
-      if (!lastUser) return; saveConvs();
+      if (!lastUser && !lastImg) return; saveConvs();
       const all = msgs.querySelectorAll('.message');
       for (let i=all.length-1;i>=0;i--) { if(all[i].classList.contains('user-msg')) break; all[i].remove(); }
-      send(lastUser);
+      send(lastUser, lastImg);
     };
 
     // ─── KEYBOARD ─────────────────────────────────────────
     document.addEventListener('keydown', e => {
-      if (e.key==='Escape') { closeMob(); if(genning&&abort){abort.abort();} }
+      if (e.key==='Escape') {
+        if (lightbox.classList.contains('open')) { lightbox.classList.remove('open'); return; }
+        closeMob();
+        if (genning && abort) abort.abort();
+      }
       if((e.ctrlKey||e.metaKey)&&e.shiftKey&&e.key==='N'){e.preventDefault();newChat();}
     });
 
