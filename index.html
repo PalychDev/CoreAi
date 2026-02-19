@@ -533,6 +533,27 @@
       imgPreviewWrap.classList.add('has-img');
     }
 
+    // Compress image for API only — display always uses original dataUrl
+    function compressImage(dataUrl, mimeType, maxPx = 1280, quality = 0.85) {
+      return new Promise(resolve => {
+        const img = new Image();
+        img.onload = () => {
+          let { width: w, height: h } = img;
+          if (w > maxPx || h > maxPx) {
+            if (w >= h) { h = Math.round(h * maxPx / w); w = maxPx; }
+            else        { w = Math.round(w * maxPx / h); h = maxPx; }
+          }
+          const c = document.createElement('canvas');
+          c.width = w; c.height = h;
+          c.getContext('2d').drawImage(img, 0, 0, w, h);
+          const out = c.toDataURL('image/jpeg', quality);
+          resolve(out.split(',')[1]); // return base64 only
+        };
+        img.onerror = () => resolve(dataUrl.split(',')[1]); // fallback to original
+        img.src = dataUrl;
+      });
+    }
+
     attachBtn.addEventListener('click', () => {
       if (!isVision(model)) { toast('Image upload only for Gemini & DeepSeek', 'info'); return; }
       imgFileInput.click();
@@ -543,11 +564,11 @@
       if (!file) return;
       if (file.size > 20 * 1024 * 1024) { toast('Image too large (max 20MB)', 'error'); return; }
       const reader = new FileReader();
-      reader.onload = e => {
+      reader.onload = async e => {
         const dataUrl = e.target.result;
         const mimeType = file.type || 'image/jpeg';
-        const base64 = dataUrl.split(',')[1];
-        attachedImg = { dataUrl, mimeType, base64 };
+        const base64 = await compressImage(dataUrl, mimeType); // compressed for API
+        attachedImg = { dataUrl, mimeType, base64 }; // dataUrl = original for display
         showImgPreview(dataUrl);
         sendBtn.disabled = false; 
       };
@@ -574,11 +595,11 @@
           if (!file) return;
           if (file.size > 20 * 1024 * 1024) { toast('Image too large (max 20MB)', 'error'); return; }
           const reader = new FileReader();
-          reader.onload = ev => {
+          reader.onload = async ev => {
             const dataUrl = ev.target.result;
             const mimeType = file.type || 'image/png';
-            const base64 = dataUrl.split(',')[1];
-            attachedImg = { dataUrl, mimeType, base64 };
+            const base64 = await compressImage(dataUrl, mimeType); // compressed for API
+            attachedImg = { dataUrl, mimeType, base64 }; // dataUrl = original for display
             showImgPreview(dataUrl);
             sendBtn.disabled = false;
             toast('Image pasted from clipboard', 'success');
@@ -708,6 +729,32 @@
     }
     function rmThinking() { document.getElementById('think')?.remove(); }
     function scrollBot() { requestAnimationFrame(() => { chatArea.scrollTop = chatArea.scrollHeight; }); }
+
+    // Restore an unanswered user message back to the input box and remove it from history.
+    // Called whenever a request fails with no AI response saved.
+    function restoreUserMsg(conv) {
+      if (!conv || !conv.messages.length) return;
+      const last = conv.messages[conv.messages.length - 1];
+      if (!last || last.role !== 'user') return;
+      // Put text back in input (only if input is currently empty)
+      if (!userInput.value.trim() && last.content && last.content !== '[image]') {
+        userInput.value = last.content;
+        userInput.style.height = 'auto';
+        userInput.style.height = Math.min(userInput.scrollHeight, 200) + 'px';
+      }
+      // Restore attached image
+      if (last._img && !attachedImg) {
+        attachedImg = { dataUrl: last._img.dataUrl, mimeType: last._img.mimeType, base64: last._img.base64 };
+        showImgPreview(last._img.dataUrl);
+      }
+      sendBtn.disabled = false;
+      // Remove the unanswered message from history
+      conv.messages.pop();
+      saveConvs();
+      // Also remove its DOM element
+      const lastUserEl = msgs.querySelector('.user-msg:last-of-type');
+      if (lastUserEl) lastUserEl.remove();
+    }
 
     
     async function send(retryArg=null, retryImgArg=null) {
@@ -886,9 +933,10 @@
         if (isNetworkErr) {
           toast('Network error, retrying without streaming…', 'info');
           await fallback(conv, body);
-          setGen(false); abort=null; sendBtn.disabled=!userInput.value.trim(); userInput.focus(); return;
+          setGen(false); abort=null; sendBtn.disabled=!userInput.value.trim() && !attachedImg; userInput.focus(); return;
         }
-        
+        // API error (4xx/5xx etc.) — restore the unanswered user message
+        restoreUserMsg(conv);
         const errEl = document.createElement('div');
         errEl.className='message ai-msg';
         errEl.innerHTML = `
@@ -927,6 +975,8 @@
         conv.messages.push({role:'assistant',content}); saveConvs();
       } catch(e) {
         rmThinking();
+        // Restore the unanswered user message so the next send won't duplicate it
+        restoreUserMsg(conv);
         const errEl = document.createElement('div');
         errEl.className='message ai-msg';
         errEl.innerHTML = `
@@ -943,19 +993,13 @@
     }
 
     window._retryLast = function() {
-      const conv = curConv(); if (!conv) return;
-      let lastUser = null, lastImg = null;
-      for (let i=conv.messages.length-1;i>=0;i--) {
-        if (conv.messages[i].role==='user') {
-          lastUser = conv.messages[i].content;
-          lastImg = conv.messages[i]._img || null;
-          conv.messages = conv.messages.slice(0,i+1); break;
-        }
+      // Message was already restored to input by restoreUserMsg(); just re-send.
+      const errMsgs = msgs.querySelectorAll('.ai-msg');
+      // Remove the error element
+      for (let i = errMsgs.length - 1; i >= 0; i--) {
+        if (errMsgs[i].querySelector('.retry-btn')) { errMsgs[i].remove(); break; }
       }
-      if (!lastUser && !lastImg) return; saveConvs();
-      const all = msgs.querySelectorAll('.message');
-      for (let i=all.length-1;i>=0;i--) { if(all[i].classList.contains('user-msg')) break; all[i].remove(); }
-      send(lastUser, lastImg);
+      if (userInput.value.trim() || attachedImg) send();
     };
 
     document.addEventListener('keydown', e => {
