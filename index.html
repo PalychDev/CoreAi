@@ -638,7 +638,20 @@
               }
             }
           }
-        } catch(se) { if (se.name !== 'AbortError') throw se; }
+        } catch(se) {
+          if (se.name === 'AbortError') { /* handled below */ }
+          else {
+            // Network dropped mid-stream — auto-retry with non-streaming
+            streaming = false;
+            clearTimeout(idleT);
+            if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+            cursor.remove();
+            msgEl.remove();
+            toast('Connection dropped, retrying…', 'info');
+            await fallback(conv, body);
+            setGen(false); abort=null; sendBtn.disabled=!userInput.value.trim(); userInput.focus(); return;
+          }
+        }
 
         // Stop streaming — disable cursor BEFORE cancelling RAF
         streaming = false;
@@ -677,8 +690,15 @@
           setGen(false); abort=null; sendBtn.disabled=!userInput.value.trim(); userInput.focus(); return;
         }
 
-        // Real error
+        // Network error (TypeError) — auto-retry without streaming
+        const isNetworkErr = err instanceof TypeError || (err.message && err.message.toLowerCase().includes('network'));
         lastAi?.remove();
+        if (isNetworkErr) {
+          toast('Network error, retrying without streaming…', 'info');
+          await fallback(conv, body);
+          setGen(false); abort=null; sendBtn.disabled=!userInput.value.trim(); userInput.focus(); return;
+        }
+        // Other error — show error message
         const errEl = document.createElement('div');
         errEl.className='message ai-msg';
         errEl.innerHTML = `
