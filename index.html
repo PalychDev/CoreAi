@@ -39,7 +39,7 @@
     #metal-sheen { position: fixed; inset: 0; z-index: 1; pointer-events: none; background: linear-gradient(135deg, transparent 30%, rgba(255,255,255,0.018) 40%, rgba(255,255,255,0.028) 46%, rgba(255,255,255,0.018) 52%, transparent 60%); }
     #noise-overlay { position: fixed; inset: 0; z-index: 2; pointer-events: none; opacity: 0.08; mix-blend-mode: soft-light; }
 
-    /* SIDEBAR */
+    
     .sidebar { position: relative; z-index: 50; width: var(--sidebar-width); height: 100vh; background: rgba(10,10,10,0.6); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; align-items: center; padding: 16px 0; transition: width 0.3s cubic-bezier(0.4,0,0.2,1); overflow: hidden; flex-shrink: 0; }
     .sidebar.expanded { width: var(--sidebar-expanded); align-items: flex-start; background: rgba(10,10,10,0.75); }
     .sidebar-btn { width: 40px; height: 40px; min-width: 40px; border-radius: 10px; border: none; background: transparent; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease; margin: 2px 0; }
@@ -69,7 +69,7 @@
     .clear-btn { width: 100%; margin-top: 6px; padding: 7px 12px; background: transparent; border: none; color: var(--text-muted); font-size: 12px; font-family: inherit; text-align: left; cursor: pointer; border-radius: 8px; transition: all 0.15s ease; }
     .clear-btn:hover { color: var(--error-color); background: rgba(239,68,68,0.07); }
 
-    /* MAIN */
+    
     .main { flex: 1; display: flex; flex-direction: column; position: relative; z-index: 10; height: 100vh; overflow: hidden; }
     .welcome { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px; text-align: center; }
     .welcome.hidden { display: none; }
@@ -119,7 +119,7 @@
     .msg-body th { background: rgba(255,255,255,0.04); font-weight: 600; }
     .msg-time { font-size: 10px; color: var(--text-muted); margin-top: 4px; padding: 0 4px; }
 
-    /* Thinking */
+    
     .thinking { display: flex; align-items: center; gap: 10px; color: var(--text-secondary); font-size: 14px; }
     .thinking-dots { display: flex; gap: 5px; }
     .thinking-dots span { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: dotPulse 1.2s ease-in-out infinite; }
@@ -127,14 +127,14 @@
     .thinking-dots span:nth-child(3) { animation-delay: 0.3s; }
     @keyframes dotPulse { 0%,80%,100% { opacity: 0.2; transform: scale(0.75); } 40% { opacity: 1; transform: scale(1); } }
 
-    /* Blinking cursor during stream */
+    
     .stream-cursor { display: inline-block; width: 2px; height: 1em; background: var(--accent); margin-left: 2px; vertical-align: text-bottom; border-radius: 1px; animation: cursorBlink 0.85s step-end infinite; }
     @keyframes cursorBlink { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
 
-    /* AI sparkle icon */
+    
     .ai-icon { width: 16px; height: 16px; color: var(--accent); flex-shrink: 0; }
 
-    /* INPUT */
+    
     .input-area { padding: 16px 24px 24px; position: relative; z-index: 20; }
     .input-wrapper { max-width: 760px; margin: 0 auto; }
     .input-box-container { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid var(--border-color-strong); border-radius: 16px; display: flex; flex-direction: column; transition: border-color 0.2s ease; }
@@ -146,7 +146,7 @@
     .input-left { display: flex; align-items: center; gap: 8px; }
     .input-brand { font-size: 11px; font-weight: 600; letter-spacing: 0.04em; color: var(--text-muted); user-select: none; text-transform: uppercase; white-space: nowrap; }
 
-    /* Model dropdown */
+    
     .model-dd { position: relative; }
     .model-dd-btn { display: flex; align-items: center; gap: 7px; padding: 6px 10px 6px 11px; background: rgba(255,255,255,0.04); border: 1px solid var(--border-color-strong); border-radius: 9px; color: var(--text-secondary); font-size: 12px; font-weight: 500; font-family: inherit; cursor: pointer; outline: none; transition: all 0.18s ease; white-space: nowrap; }
     .model-dd-btn:hover { background: rgba(255,255,255,0.07); color: var(--text-primary); }
@@ -159,7 +159,7 @@
     .model-opt:hover { background: rgba(255,255,255,0.07); color: var(--text-primary); }
     .model-opt.selected { color: var(--accent); background: var(--accent-soft); }
 
-    /* Buttons */
+    
     .stop-btn { width: 36px; height: 36px; border-radius: 10px; border: 1px solid rgba(239,68,68,0.25); background: rgba(239,68,68,0.12); color: #f87171; cursor: pointer; display: none; align-items: center; justify-content: center; transition: all 0.2s ease; }
     .stop-btn.visible { display: flex; }
     .stop-btn:hover { background: rgba(239,68,68,0.22); transform: scale(1.05); }
@@ -178,7 +178,7 @@
     .retry-btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px; border: 1px solid var(--border-color); background: rgba(255,255,255,0.04); color: var(--text-secondary); font-size: 12px; cursor: pointer; font-family: inherit; margin-top: 10px; transition: all 0.15s ease; }
     .retry-btn:hover { background: rgba(255,255,255,0.08); color: var(--text-primary); }
 
-    /* Toast */
+    
     .toast-wrap { position: fixed; top: 20px; right: 20px; z-index: 200; display: flex; flex-direction: column; gap: 8px; pointer-events: none; align-items: flex-end; }
     .toast { display: flex; align-items: center; gap: 10px; padding: 11px 16px 11px 14px; border-radius: 13px; font-size: 13px; font-weight: 500; max-width: 320px; pointer-events: auto; backdrop-filter: blur(28px); box-shadow: 0 4px 24px rgba(0,0,0,0.35); animation: toastIn 0.45s cubic-bezier(0.22,1,0.36,1) forwards; }
     .toast-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
@@ -193,9 +193,9 @@
     .toast.info .toast-dot { background: var(--accent); }
 
 
-    /* ── IMAGE ATTACH ─────────────────────────────────── */
+    
     .attach-btn {
-      width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--border-color-strong);
+      width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--border-color-strong);
       background: rgba(255,255,255,0.04); color: var(--text-muted); cursor: pointer;
       display: none; align-items: center; justify-content: center; transition: all 0.18s ease;
       flex-shrink: 0;
@@ -204,7 +204,7 @@
     .attach-btn:hover { background: rgba(255,255,255,0.08); color: var(--text-primary); border-color: rgba(255,255,255,0.15); }
     .attach-btn svg { width: 16px; height: 16px; }
 
-    /* Image preview strip above textarea */
+    
     .img-preview-wrap {
       display: none; padding: 10px 14px 0;
       gap: 8px; flex-wrap: wrap;
@@ -225,14 +225,14 @@
     }
     .img-preview-remove:hover { background: rgba(239,68,68,0.8); }
 
-    /* Image in chat bubble */
+    
     .msg-img {
       max-width: 280px; max-height: 200px; border-radius: 10px;
       border: 1px solid var(--border-color); display: block;
       margin-bottom: 8px; object-fit: cover; cursor: zoom-in;
     }
 
-    /* Lightbox */
+    
     .lightbox {
       position: fixed; inset: 0; background: rgba(0,0,0,0.88); z-index: 300;
       display: none; align-items: center; justify-content: center;
@@ -241,14 +241,14 @@
     .lightbox.open { display: flex; }
     .lightbox img { max-width: 90vw; max-height: 90vh; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.8); }
 
-    /* Vision model badge color */
+    
     .vision-badge {
       font-size: 10px; padding: 2px 7px; border-radius: 4px;
       background: rgba(100,180,120,0.12); border: 1px solid rgba(100,200,120,0.2);
       color: #6dcc8a; font-weight: 500; margin-left: 4px;
     }
 
-    /* Mobile */
+    
     @media (max-width: 768px) {
       .sidebar { position: fixed; left: -280px; z-index: 60; background: rgba(10,10,10,0.95); transition: left 0.3s cubic-bezier(0.4,0,0.2,1); }
       .sidebar.mobile-open { left: 0; width: var(--sidebar-expanded); }
@@ -263,7 +263,7 @@
     .mob-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 55; }
     .mob-overlay.active { display: block; }
 
-    /* Intro animations */
+    
     .intro-bg { opacity: 0; }
     .intro-sb { opacity: 0; transform: translateX(-20px); }
     .intro-up { opacity: 0; transform: translateY(30px); }
@@ -363,10 +363,10 @@
                 </div>
               </div>
             </div>
-            <button class="attach-btn" id="attachBtn" title="Attach image (Gemini / DeepSeek only)">
+            <div style="display:flex;gap:6px;align-items:center;">
+              <button class="attach-btn" id="attachBtn" title="Attach image (Gemini / DeepSeek only)">
                 <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13"/></svg>
               </button>
-            <div style="display:flex;gap:6px;align-items:center;">
               <button class="stop-btn" id="stopBtn" title="Stop (Esc)">
                 <svg fill="currentColor" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="2"/></svg>
               </button>
@@ -383,14 +383,14 @@
 
   <script>
   (() => {
-    // ─── CONFIG ───────────────────────────────────────────
+    
     const API_KEY  = 'sk--Wyh0R57LMDmHRzxVBsC2qXDoDvOMrdjIWsozCM6Pdk';
     const ENDPOINT = 'https://freeaiapikey.com/v1/chat/completions';
     const SYS      = 'You are a helpful, friendly, and knowledgeable AI assistant. Provide clear, accurate, well-structured responses. Use markdown code blocks with language tags for code. Respond in the same language the user writes in.';
-    const IDLE_MS  = 60000; // abort if no chunk for 60s (models can pause while thinking)
-    const CONN_MS  = 90000; // total connect timeout
+    const IDLE_MS  = 60000; 
+    const CONN_MS  = 90000; 
 
-    // ─── STATE ───────────────────────────────────────────
+    
     if (localStorage.getItem('ai_ver') !== 'v14') {
       localStorage.setItem('ai_ver', 'v14');
       localStorage.removeItem('ai_model');
@@ -403,12 +403,12 @@
     let idleT    = null;
     let attachedImg = null; // { dataUrl, mimeType, base64 }
 
-    // Models that support vision
+    
     const VISION_MODELS = ['deepseek/deepseek-v3.2', 'google/gemini-3'];
     function supportsVision() { return VISION_MODELS.some(m => model.startsWith(m.split('/')[0]) && model.includes(m.split('/')[1]?.split('-')[0] || '')); }
     function isVision(m) { return m.includes('deepseek') || m.includes('gemini'); }
 
-    // ─── ELEMENTS ────────────────────────────────────────
+    
     const sidebar    = document.getElementById('sidebar');
     const welcome    = document.getElementById('welcome');
     const chatArea   = document.getElementById('chatArea');
@@ -428,22 +428,22 @@
     const lightbox       = document.getElementById('lightbox');
     const lightboxImg    = document.getElementById('lightboxImg');
 
-    // ─── MODEL DROPDOWN ───────────────────────────────────
+    
     function setModel(v) {
       model = v; localStorage.setItem('ai_model', v);
       modelLbl.textContent = v.split('/').pop();
       modelPanel.querySelectorAll('.model-opt').forEach(o => o.classList.toggle('selected', o.dataset.value === v));
-      // Show attach button only for vision-capable models
+      
       const canVision = isVision(v);
       attachBtn.classList.toggle('visible', canVision);
-      if (!canVision && attachedImg) clearImg(); // remove attached image if model changed away
+      if (!canVision && attachedImg) clearImg(); 
     }
     setModel(model);
     modelDdBtn.addEventListener('click', e => { e.stopPropagation(); modelDd.classList.toggle('open'); });
     modelPanel.querySelectorAll('.model-opt').forEach(o => o.addEventListener('click', () => { setModel(o.dataset.value); modelDd.classList.remove('open'); }));
     document.addEventListener('click', () => modelDd.classList.remove('open'));
 
-    // ─── MARKDOWN ─────────────────────────────────────────
+    
     marked.setOptions({
       highlight: (code, lang) => {
         if (lang && hljs.getLanguage(lang)) try { return hljs.highlight(code, { language: lang }).value; } catch {}
@@ -462,7 +462,7 @@
     }
     function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
-    // ─── TOAST ───────────────────────────────────────────
+    
     const toastWrap = document.getElementById('toastWrap');
     const _toasts = [];
     function toast(msg, type = 'info') {
@@ -477,7 +477,7 @@
       el._t = setTimeout(kill, 3500);
     }
 
-    // ─── NOISE ───────────────────────────────────────────
+    
     const nc = document.createElement('canvas'); nc.width = nc.height = 256;
     const nctx = nc.getContext('2d'); const nd = nctx.createImageData(256,256);
     for (let i = 0; i < nd.data.length; i+=4) { const v=Math.random()*255; nd.data[i]=nd.data[i+1]=nd.data[i+2]=v; nd.data[i+3]=50; }
@@ -486,12 +486,12 @@
     no.style.backgroundImage = `url(${nc.toDataURL()})`;
     no.style.backgroundRepeat = 'repeat'; no.style.backgroundSize = '256px';
 
-    // ─── GREETING ─────────────────────────────────────────
+    
     const hr = new Date().getHours();
     document.getElementById('greeting').textContent =
       hr < 6 ? 'Good night' : hr < 12 ? 'Good morning' : hr < 18 ? 'Good afternoon' : 'Good evening';
 
-    // ─── SIDEBAR / NAV ───────────────────────────────────
+    
     document.getElementById('rowToggle').addEventListener('click', () => sidebar.classList.toggle('expanded'));
     document.getElementById('rowNew').addEventListener('click', newChat);
     document.getElementById('rowExport').addEventListener('click', exportChat);
@@ -499,7 +499,7 @@
     document.getElementById('mobOverlay').addEventListener('click', closeMob);
     function closeMob() { sidebar.classList.remove('mobile-open'); document.getElementById('mobOverlay').classList.remove('active'); }
 
-    // ─── UI STATE ─────────────────────────────────────────
+    
     function setGen(v) {
       genning = v;
       sendBtn.disabled = v || !userInput.value.trim();
@@ -508,7 +508,7 @@
     }
     stopBtn.addEventListener('click', () => { if (abort) abort.abort(); });
 
-    // ─── IMAGE ATTACH ──────────────────────────────────────
+    
 
     function clearImg() {
       attachedImg = null;
@@ -549,17 +549,48 @@
         const base64 = dataUrl.split(',')[1];
         attachedImg = { dataUrl, mimeType, base64 };
         showImgPreview(dataUrl);
-        sendBtn.disabled = false; // image attached, can send
+        sendBtn.disabled = false; 
       };
       reader.readAsDataURL(file);
-      imgFileInput.value = ''; // reset so same file can be re-selected
+      imgFileInput.value = ''; 
     });
 
-    // Lightbox
+    
     lightbox.addEventListener('click', () => lightbox.classList.remove('open'));
     document.addEventListener('keydown', e => { if (e.key === 'Escape') lightbox.classList.remove('open'); });
 
-    // ─── TEXTAREA ─────────────────────────────────────────
+    
+    document.addEventListener('paste', e => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      for (const item of items) {
+        if (item.type.startsWith('image/')) {
+          e.preventDefault();
+          if (!isVision(model)) {
+            toast('Switch to Gemini or DeepSeek to paste images', 'info');
+            return;
+          }
+          const file = item.getAsFile();
+          if (!file) return;
+          if (file.size > 20 * 1024 * 1024) { toast('Image too large (max 20MB)', 'error'); return; }
+          const reader = new FileReader();
+          reader.onload = ev => {
+            const dataUrl = ev.target.result;
+            const mimeType = file.type || 'image/png';
+            const base64 = dataUrl.split(',')[1];
+            attachedImg = { dataUrl, mimeType, base64 };
+            showImgPreview(dataUrl);
+            sendBtn.disabled = false;
+            toast('Image pasted from clipboard', 'success');
+            userInput.focus();
+          };
+          reader.readAsDataURL(file);
+          return; 
+        }
+      }
+    });
+
+    
     userInput.addEventListener('input', () => {
       userInput.style.height = 'auto';
       userInput.style.height = Math.min(userInput.scrollHeight, 200) + 'px';
@@ -573,7 +604,7 @@
       c.addEventListener('click', () => { userInput.value = c.dataset.prompt; userInput.dispatchEvent(new Event('input')); send(); });
     });
 
-    // ─── CONVERSATIONS ────────────────────────────────────
+    
     function curConv() { return convs.find(c => c.id === curId); }
     function saveConvs() {
       try { localStorage.setItem('ai_convs', JSON.stringify(convs)); }
@@ -626,7 +657,7 @@
       toast('Exported!','success');
     }
 
-    // ─── AI ICON (clean SVG, no rendering issues) ─────────
+    
     const AI_ICON = `<svg class="ai-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/><path stroke-linecap="round" stroke-linejoin="round" d="M18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z"/></svg>`;
 
     function copify(el) {
@@ -651,7 +682,7 @@
       if (role === 'user') {
         const imgHtml = imgData ? `<img class="msg-img" src="${imgData.dataUrl}" alt="attached image">` : '';
         el.innerHTML = `<div class="msg-body">${imgHtml}${content ? esc(content) : ''}</div><span class="msg-time">${t}</span>`;
-        // Lightbox on image click
+        
         if (imgData) {
           el.querySelector('.msg-img')?.addEventListener('click', () => {
             lightboxImg.src = imgData.dataUrl;
@@ -678,14 +709,14 @@
     function rmThinking() { document.getElementById('think')?.remove(); }
     function scrollBot() { requestAnimationFrame(() => { chatArea.scrollTop = chatArea.scrollHeight; }); }
 
-    // ─── SEND ─────────────────────────────────────────────
+    
     async function send(retryArg=null, retryImgArg=null) {
       const text = retryArg || userInput.value.trim();
       const img  = retryImgArg || attachedImg;
       if (!text && !img || genning) return;
       setGen(true);
 
-      const sentImg = img; // capture before clearing
+      const sentImg = img; 
       if (!retryArg) {
         userInput.value=''; userInput.style.height='auto';
         clearImg();
@@ -694,7 +725,7 @@
       const conv = curConv();
 
       if (!retryArg) {
-        // Build content for storage (text only, images stored separately as metadata)
+        
         const storedContent = text || '[image]';
         conv.messages.push({role:'user', content: storedContent, _img: sentImg ? {dataUrl: sentImg.dataUrl, mimeType: sentImg.mimeType, base64: sentImg.base64} : null});
         saveConvs();
@@ -704,7 +735,7 @@
       showThinking();
       abort = new AbortController();
 
-      // Build API messages — include image for vision models
+      
       const apiMessages = conv.messages.map(m => {
         if (m._img && isVision(model)) {
           const parts = [];
@@ -720,13 +751,13 @@
         messages: [{role:'system',content:SYS}, ...apiMessages]
       };
 
-      // Idle watchdog — resets on every chunk
+      
       function resetIdle() {
         clearTimeout(idleT);
         idleT = setTimeout(() => { if (genning && abort) abort.abort(); }, IDLE_MS);
       }
 
-      // Connection timeout (fires before idle if server never responds)
+      
       const connTimer = setTimeout(() => { if (genning && abort) abort.abort(); }, CONN_MS);
 
       try {
@@ -747,7 +778,7 @@
 
         rmThinking();
 
-        // ── streaming ──
+        
         const reader = resp.body.getReader();
         const dec = new TextDecoder();
         let buf = '', content = '', gotAny = false;
@@ -755,7 +786,7 @@
         const msgEl = appendMsg('assistant','');
         const bodyEl = msgEl.querySelector('.msg-body');
 
-        // Blinking cursor element
+        
         const cursor = document.createElement('span');
         cursor.className = 'stream-cursor';
         bodyEl.innerHTML = '';
@@ -763,14 +794,14 @@
 
         let rafId = null;
         let rendered = '';
-        let streaming = true; // FIX: guard so RAF can't re-add cursor after stream ends
+        let streaming = true; 
 
         function flush() {
           rafId = null;
           if (content === rendered) return;
           rendered = content;
           bodyEl.innerHTML = md(content);
-          if (streaming) bodyEl.appendChild(cursor); // only during active stream
+          if (streaming) bodyEl.appendChild(cursor); 
           copify(msgEl);
           scrollBot();
         }
@@ -800,7 +831,7 @@
         } catch(se) {
           if (se.name === 'AbortError') { /* handled below */ }
           else {
-            // Network dropped mid-stream — auto-retry with non-streaming
+            
             streaming = false;
             clearTimeout(idleT);
             if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
@@ -812,23 +843,23 @@
           }
         }
 
-        // Stop streaming — disable cursor BEFORE cancelling RAF
+        
         streaming = false;
         clearTimeout(idleT);
         if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
         cursor.remove();
 
         if (content.trim()) {
-          // Final clean render — no cursor
+          
           bodyEl.innerHTML = md(content);
           copify(msgEl); scrollBot();
           conv.messages.push({role:'assistant',content}); saveConvs();
         } else if (!gotAny) {
-          // No chunks at all — fall back to non-streaming
+          
           msgEl.remove();
           await fallback(conv, body);
         } else {
-          // Aborted mid-stream but got some content
+          
           if (content) { conv.messages.push({role:'assistant',content}); saveConvs(); }
           else msgEl.remove();
         }
@@ -836,12 +867,12 @@
       } catch(err) {
         clearTimeout(connTimer); clearTimeout(idleT);
         rmThinking();
-        // Clean up dangling cursor
+        
         document.querySelector('.stream-cursor')?.remove();
         const lastAi = msgs.querySelector('.ai-msg:last-child');
 
         if (err.name === 'AbortError') {
-          // Partial content — keep it if non-empty
+          
           const partText = lastAi?.querySelector('.msg-body')?.innerText?.trim();
           if (partText) { conv.messages.push({role:'assistant',content:partText}); saveConvs(); }
           else lastAi?.remove();
@@ -849,7 +880,7 @@
           setGen(false); abort=null; sendBtn.disabled=!userInput.value.trim(); userInput.focus(); return;
         }
 
-        // Network error (TypeError) — auto-retry without streaming
+        
         const isNetworkErr = err instanceof TypeError || (err.message && err.message.toLowerCase().includes('network'));
         lastAi?.remove();
         if (isNetworkErr) {
@@ -857,7 +888,7 @@
           await fallback(conv, body);
           setGen(false); abort=null; sendBtn.disabled=!userInput.value.trim(); userInput.focus(); return;
         }
-        // Other error — show error message
+        
         const errEl = document.createElement('div');
         errEl.className='message ai-msg';
         errEl.innerHTML = `
@@ -875,7 +906,7 @@
       setGen(false); abort=null; sendBtn.disabled=!userInput.value.trim(); userInput.focus();
     }
 
-    // ─── NON-STREAMING FALLBACK ───────────────────────────
+    
     async function fallback(conv, origBody) {
       showThinking();
       try {
@@ -911,7 +942,6 @@
       }
     }
 
-    // ─── RETRY ────────────────────────────────────────────
     window._retryLast = function() {
       const conv = curConv(); if (!conv) return;
       let lastUser = null, lastImg = null;
@@ -928,7 +958,6 @@
       send(lastUser, lastImg);
     };
 
-    // ─── KEYBOARD ─────────────────────────────────────────
     document.addEventListener('keydown', e => {
       if (e.key==='Escape') {
         if (lightbox.classList.contains('open')) { lightbox.classList.remove('open'); return; }
@@ -938,14 +967,14 @@
       if((e.ctrlKey||e.metaKey)&&e.shiftKey&&e.key==='N'){e.preventDefault();newChat();}
     });
 
-    // ─── INTRO ANIMATION ──────────────────────────────────
+   
     [
       ['.intro-bg', 0], ['.intro-sb', 200], ['.intro-up', 550], ['.intro-ub', 900]
     ].forEach(([sel, delay]) =>
       setTimeout(() => document.querySelectorAll(sel).forEach(el => el.classList.add('go')), delay)
     );
 
-    // ─── INIT ─────────────────────────────────────────────
+  
     renderHist(); userInput.focus();
   })();
   </script>
