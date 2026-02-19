@@ -178,7 +178,6 @@
     .chat-history::-webkit-scrollbar-track { background: transparent; }
     .chat-history::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 4px; }
 
-    /* Clear history button at bottom of chat list */
     .clear-history-btn {
       width: 100%; margin-top: 6px;
       padding: 7px 12px;
@@ -378,29 +377,34 @@
       font-size: 10px; color: var(--text-muted); margin-top: 4px; padding: 0 4px;
     }
 
+    /* ===== THINKING INDICATOR (improved) ===== */
     .thinking {
-      display: flex; align-items: center; gap: 6px;
+      display: flex; align-items: center; gap: 10px;
       color: var(--text-secondary); font-size: 14px;
     }
 
-    .thinking-dots { display: flex; gap: 4px; }
+    .thinking-dots { display: flex; gap: 5px; }
 
     .thinking-dots span {
-      width: 6px; height: 6px; border-radius: 50%; background: var(--accent);
-      animation: dotPulse 1.4s ease-in-out infinite;
+      width: 7px; height: 7px; border-radius: 50%; background: var(--accent);
+      animation: dotPulse 1.2s ease-in-out infinite;
     }
 
-    .thinking-dots span:nth-child(2) { animation-delay: 0.2s; }
-    .thinking-dots span:nth-child(3) { animation-delay: 0.4s; }
+    .thinking-dots span:nth-child(2) { animation-delay: 0.15s; }
+    .thinking-dots span:nth-child(3) { animation-delay: 0.3s; }
 
     @keyframes dotPulse {
-      0%, 80%, 100% { opacity: 0.2; transform: scale(0.8); }
+      0%, 80%, 100% { opacity: 0.2; transform: scale(0.75); }
       40% { opacity: 1; transform: scale(1); }
     }
 
+    /* Streaming cursor */
     .streaming-cursor::after {
-      content: '▋'; animation: blink 1s step-end infinite;
-      color: var(--accent); font-weight: 300;
+      content: '▋';
+      animation: blink 0.8s step-end infinite;
+      color: var(--accent);
+      font-weight: 300;
+      margin-left: 2px;
     }
 
     @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
@@ -437,7 +441,6 @@
     .input-box::-webkit-scrollbar { display: none; }
     .input-box::placeholder { color: var(--text-muted); }
 
-    /* Bottom bar: brand+dropdown grouped left, send btn right */
     .input-bottom-bar {
       display: flex; align-items: center;
       justify-content: space-between;
@@ -458,9 +461,7 @@
     }
 
     /* ===== CUSTOM MODEL DROPDOWN ===== */
-    .model-dropdown {
-      position: relative;
-    }
+    .model-dropdown { position: relative; }
 
     .model-dropdown-btn {
       display: flex; align-items: center; gap: 7px;
@@ -509,16 +510,12 @@
       border: 1px solid var(--border-color);
       border-radius: 14px;
       overflow: hidden;
-      box-shadow:
-        0 12px 40px rgba(0,0,0,0.7),
-        0 1px 0 rgba(255,255,255,0.04) inset;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.7), 0 1px 0 rgba(255,255,255,0.04) inset;
       opacity: 0;
       transform: translateY(6px) scale(0.97);
       transform-origin: bottom left;
       pointer-events: none;
-      transition:
-        opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1),
-        transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
       padding: 5px;
       z-index: 100;
     }
@@ -539,15 +536,20 @@
       letter-spacing: -0.1px;
     }
 
-    .model-option:hover {
-      background: rgba(255,255,255,0.07);
-      color: var(--text-primary);
-    }
+    .model-option:hover { background: rgba(255,255,255,0.07); color: var(--text-primary); }
+    .model-option.selected { color: var(--accent); background: var(--accent-soft); }
 
-    .model-option.selected {
-      color: var(--accent);
-      background: var(--accent-soft);
+    /* Stop button */
+    .stop-btn {
+      width: 36px; height: 36px; border-radius: 10px; border: none;
+      background: rgba(239,68,68,0.15); color: #f87171; cursor: pointer;
+      display: none; align-items: center; justify-content: center;
+      transition: all 0.2s ease; flex-shrink: 0;
+      border: 1px solid rgba(239,68,68,0.25);
     }
+    .stop-btn.visible { display: flex; }
+    .stop-btn:hover { background: rgba(239,68,68,0.25); transform: scale(1.05); }
+    .stop-btn svg { width: 16px; height: 16px; }
 
     .send-btn {
       width: 36px; height: 36px; border-radius: 10px; border: none;
@@ -558,9 +560,25 @@
 
     .send-btn:hover { background: var(--accent-hover); transform: scale(1.05); }
     .send-btn:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
+    .send-btn.hidden { display: none; }
     .send-btn svg { width: 18px; height: 18px; }
 
     .input-footer { text-align: center; margin-top: 10px; font-size: 11px; color: var(--text-muted); }
+
+    /* Connection status */
+    .conn-status {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 11px; color: var(--text-muted);
+      margin-left: 8px; transition: all 0.3s;
+    }
+    .conn-dot {
+      width: 5px; height: 5px; border-radius: 50%;
+      background: var(--text-muted);
+      transition: background 0.3s;
+    }
+    .conn-status.ok .conn-dot { background: var(--success-color); box-shadow: 0 0 4px var(--success-color); }
+    .conn-status.err .conn-dot { background: var(--error-color); box-shadow: 0 0 4px var(--error-color); }
+    .conn-status.loading .conn-dot { background: var(--accent); animation: dotPulse 1s infinite; }
 
     /* ===== TOAST ===== */
     .toast-container {
@@ -578,51 +596,28 @@
       pointer-events: auto;
       backdrop-filter: blur(28px) saturate(160%);
       -webkit-backdrop-filter: blur(28px) saturate(160%);
-      box-shadow:
-        0 4px 24px rgba(0,0,0,0.35),
-        0 1px 0 rgba(255,255,255,0.06) inset;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.35), 0 1px 0 rgba(255,255,255,0.06) inset;
       animation: toastEnter 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards;
       transform-origin: right center;
     }
 
-    .toast-dot {
-      width: 6px; height: 6px; border-radius: 50%;
-      flex-shrink: 0; opacity: 0.9;
-    }
-
-    .toast.hiding {
-      animation: toastExit 0.6s ease-out forwards;
-    }
+    .toast-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; opacity: 0.9; }
+    .toast.hiding { animation: toastExit 0.6s ease-out forwards; }
 
     @keyframes toastEnter {
       0%   { opacity: 0; transform: translateX(16px) scale(0.95); filter: blur(3px); }
       100% { opacity: 1; transform: translateX(0) scale(1); filter: blur(0px); }
     }
-
     @keyframes toastExit {
       0%   { opacity: 1; transform: translateY(0); }
       100% { opacity: 0; transform: translateY(-10px); }
     }
 
-    .toast.success {
-      background: rgba(20, 40, 22, 0.82);
-      border: 1px solid rgba(34, 197, 94, 0.22);
-      color: #86efac;
-    }
+    .toast.success { background: rgba(20, 40, 22, 0.82); border: 1px solid rgba(34, 197, 94, 0.22); color: #86efac; }
     .toast.success .toast-dot { background: #4ade80; box-shadow: 0 0 6px #4ade80; }
-
-    .toast.error {
-      background: rgba(40, 14, 14, 0.82);
-      border: 1px solid rgba(239, 68, 68, 0.22);
-      color: #fca5a5;
-    }
+    .toast.error { background: rgba(40, 14, 14, 0.82); border: 1px solid rgba(239, 68, 68, 0.22); color: #fca5a5; }
     .toast.error .toast-dot { background: #f87171; box-shadow: 0 0 6px #f87171; }
-
-    .toast.info {
-      background: rgba(20, 18, 22, 0.78);
-      border: 1px solid rgba(255, 255, 255, 0.10);
-      color: #c0bcc8;
-    }
+    .toast.info { background: rgba(20, 18, 22, 0.78); border: 1px solid rgba(255, 255, 255, 0.10); color: #c0bcc8; }
     .toast.info .toast-dot { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
 
     /* Responsive */
@@ -640,10 +635,7 @@
       .sidebar.mobile-open .sidebar-bottom { align-items: flex-start; }
       .mobile-toggle { display: flex !important; }
       .welcome h1 { font-size: 30px; }
-      .welcome-logo-text { font-size: 26px; }
-      .welcome-icon { width: 44px; height: 44px; }
       .suggestions { grid-template-columns: 1fr; max-width: 320px; }
-      .inline-model-select { max-width: 150px; font-size: 11px; }
     }
 
     .mobile-toggle {
@@ -726,7 +718,6 @@
   </button>
   <div class="mobile-overlay" id="mobileOverlay"></div>
 
-  <!-- SIDEBAR: logo removed, only nav buttons remain -->
   <aside class="sidebar intro-sidebar" id="sidebar">
     <div class="sidebar-top">
       <div class="sidebar-row" id="toggleSidebarRow">
@@ -759,8 +750,7 @@
     <div class="chat-history" id="chatHistory"></div>
     <div class="sidebar-divider"></div>
 
-    <div class="sidebar-bottom">
-    </div>
+    <div class="sidebar-bottom"></div>
   </aside>
 
   <main class="main">
@@ -811,7 +801,6 @@
       <div class="message-container" id="messages"></div>
     </div>
 
-    <!-- INPUT: textarea on top, bottom bar with model select (left) + send (right) -->
     <div class="input-area intro-input">
       <div class="input-wrapper">
         <div class="input-box-container">
@@ -819,7 +808,6 @@
           <div class="input-bottom-bar">
             <div class="input-bottom-left">
               <span class="input-brand">Core AI</span>
-              <!-- Custom model dropdown -->
               <div class="model-dropdown" id="modelDropdown">
                 <button class="model-dropdown-btn" id="modelDropdownBtn" type="button">
                   <span class="model-dropdown-label" id="modelDropdownLabel">claude-sonnet-4.5</span>
@@ -834,20 +822,28 @@
                   <div class="model-option" data-value="google/gemini-3">gemini-3</div>
                 </div>
               </div>
+              <span class="conn-status" id="connStatus">
+                <span class="conn-dot"></span>
+                <span class="conn-label" id="connLabel"></span>
+              </span>
             </div>
-            <button class="send-btn" id="sendBtn" disabled title="Send message">
-              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 10.5L12 3m0 0l7.5 7.5M12 3v18"/>
-              </svg>
-            </button>
+            <div style="display:flex;gap:6px;align-items:center;">
+              <button class="stop-btn" id="stopBtn" title="Stop generation">
+                <svg fill="currentColor" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+              </button>
+              <button class="send-btn" id="sendBtn" disabled title="Send message">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 10.5L12 3m0 0l7.5 7.5M12 3v18"/>
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
       </div>
-      <div class="input-footer">AI can make mistakes. Consider checking important information.</div>
+      <div class="input-footer">AI can make mistakes. Press Esc to stop generation.</div>
     </div>
   </main>
 
-  <!-- Hidden select for model sync -->
   <select id="modelSelect" style="display:none;">
     <option value="anthropic/claude-sonnet-4.5">anthropic/claude-sonnet-4.5</option>
     <option value="anthropic/claude-opus-4.5">anthropic/claude-opus-4.5</option>
@@ -861,27 +857,26 @@
     // ===== CONFIGURATION =====
     const API_KEY = 'sk--Wyh0R57LMDmHRzxVBsC2qXDoDvOMrdjIWsozCM6Pdk';
 
-    const CORS_PROXIES = [
-      { name: 'thingproxy', format: url => 'https://thingproxy.freeboard.io/fetch/' + url },
-      { name: 'corsproxy.io', format: url => 'https://corsproxy.io/?' + encodeURIComponent(url) },
-      { name: 'allorigins', format: url => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url) },
-    ];
-
     const DEFAULT_CONFIG = {
       apiKey: API_KEY,
       endpoint: 'https://freeaiapikey.com/v1/chat/completions',
       model: 'anthropic/claude-sonnet-4.5',
       systemPrompt: 'You are a helpful, friendly, and knowledgeable AI assistant. You provide clear, accurate, and well-structured responses. When showing code, use markdown code blocks with language tags. Respond in the same language the user writes to you.',
       temperature: 0.7,
-      streaming: false
+      // ✅ FIX: Streaming ENABLED by default
+      streaming: true
     };
+
+    // ✅ FIX: Request timeout (30 seconds)
+    const REQUEST_TIMEOUT_MS = 30000;
 
     function loadConfig() {
       const v = localStorage.getItem('ai_app_version');
-      if (v !== 'v11') {
-        localStorage.setItem('ai_app_version', 'v11');
+      if (v !== 'v12') {
+        localStorage.setItem('ai_app_version', 'v12');
         localStorage.removeItem('ai_model');
-        localStorage.setItem('ai_streaming', 'false');
+        // ✅ Always force streaming on
+        localStorage.setItem('ai_streaming', 'true');
       }
       return {
         apiKey: localStorage.getItem('ai_api_key') || DEFAULT_CONFIG.apiKey,
@@ -889,7 +884,7 @@
         model: localStorage.getItem('ai_model') || DEFAULT_CONFIG.model,
         systemPrompt: localStorage.getItem('ai_system_prompt') || DEFAULT_CONFIG.systemPrompt,
         temperature: parseFloat(localStorage.getItem('ai_temperature') || DEFAULT_CONFIG.temperature),
-        streaming: localStorage.getItem('ai_streaming') === 'true'
+        streaming: true // ✅ Always streaming
       };
     }
 
@@ -909,16 +904,16 @@
     const messagesContainer = document.getElementById('messages');
     const userInput = document.getElementById('userInput');
     const sendBtn = document.getElementById('sendBtn');
+    const stopBtn = document.getElementById('stopBtn');
     const modelSelect = document.getElementById('modelSelect');
-    const inlineModelSelect = document.getElementById('inlineModelSelect');
+    const connStatus = document.getElementById('connStatus');
+    const connLabel = document.getElementById('connLabel');
 
-    // Sync inline model selector with config
     const modelDropdown = document.getElementById('modelDropdown');
     const modelDropdownBtn = document.getElementById('modelDropdownBtn');
     const modelDropdownLabel = document.getElementById('modelDropdownLabel');
     const modelDropdownPanel = document.getElementById('modelDropdownPanel');
 
-    // Set initial selection
     function setModelDropdown(value) {
       config.model = value;
       modelSelect.value = value;
@@ -943,9 +938,13 @@
       });
     });
 
-    document.addEventListener('click', () => {
-      modelDropdown.classList.remove('open');
-    });
+    document.addEventListener('click', () => modelDropdown.classList.remove('open'));
+
+    // ===== CONNECTION STATUS =====
+    function setConnStatus(state, text) {
+      connStatus.className = 'conn-status ' + state;
+      connLabel.textContent = text;
+    }
 
     // ===== MARKED CONFIG =====
     marked.setOptions({
@@ -984,14 +983,12 @@
       const idx = activeToasts.indexOf(toast);
       if (idx > -1) activeToasts.splice(idx, 1);
       toast.classList.add('hiding');
-      toast.addEventListener('animationend', () => {
-        if (toast.parentNode) toast.remove();
-      }, { once: true });
+      toast.addEventListener('animationend', () => { if (toast.parentNode) toast.remove(); }, { once: true });
     }
 
     function showToast(message, type = 'info') {
       const container = document.getElementById('toastContainer');
-      if (activeToasts.length >= MAX_TOASTS) return; // hard block, don't show
+      if (activeToasts.length >= MAX_TOASTS) return;
       const toast = document.createElement('div');
       toast.className = `toast ${type}`;
       const dot = document.createElement('span');
@@ -1003,7 +1000,7 @@
       toast._dismissed = false;
       container.appendChild(toast);
       activeToasts.push(toast);
-      toast._timeout = setTimeout(() => dismissToast(toast), 3000);
+      toast._timeout = setTimeout(() => dismissToast(toast), 3500);
     }
 
     // ===== GREETING =====
@@ -1036,33 +1033,27 @@
       overlay.style.backgroundSize = '256px 256px';
     })();
 
-    // ===== LOCALHOST DETECTION =====
-    function isLocalhost() {
-      const h = window.location.hostname;
-      return h === 'localhost' || h === '127.0.0.1' || h === '0.0.0.0' || h === '' || h.startsWith('192.168.');
-    }
-
-    // ===== SMART FETCH =====
-    async function smartFetch(url, options, signal) {
-      try {
-        const resp = await fetch(url, { ...options, signal });
-        return resp;
-      } catch (directErr) {
-        if (!isLocalhost()) throw directErr;
-      }
-      for (let i = 0; i < CORS_PROXIES.length; i++) {
-        const proxy = CORS_PROXIES[i];
-        const proxyUrl = proxy.format(url);
-        try {
-          const proxyOptions = { ...options, signal };
-          if (proxy.name === 'allorigins') proxyOptions.headers = { ...options.headers };
-          const resp = await fetch(proxyUrl, proxyOptions);
-          return resp;
-        } catch (proxyErr) {
-          if (proxyErr.name === 'AbortError') throw proxyErr;
+    // ===== FETCH WITH TIMEOUT =====
+    // ✅ FIX: No proxy fallback — direct fetch only with proper timeout
+    async function fetchWithTimeout(url, options, timeoutMs = REQUEST_TIMEOUT_MS) {
+      const controller = abortController; // use the shared one
+      const timeoutId = setTimeout(() => {
+        if (!controller.signal.aborted) {
+          controller.abort();
         }
+      }, timeoutMs);
+
+      try {
+        const response = await fetch(url, { ...options, signal: controller.signal });
+        clearTimeout(timeoutId);
+        return response;
+      } catch (err) {
+        clearTimeout(timeoutId);
+        if (err.name === 'AbortError' && !controller.signal.aborted) {
+          throw new Error('Request timed out. Check your connection or API endpoint.');
+        }
+        throw err;
       }
-      throw new Error('Connection failed. Check your internet or try deploying to hosting.');
     }
 
     // ===== SIDEBAR =====
@@ -1094,6 +1085,13 @@
       document.getElementById('mobileOverlay').classList.remove('active');
     });
 
+    // ===== STOP BUTTON =====
+    stopBtn.addEventListener('click', () => {
+      if (isGenerating && abortController) {
+        abortController.abort();
+      }
+    });
+
     // ===== CLEAR HISTORY =====
     function clearAllConversations() {
       if (!confirm('Delete all conversations?')) return;
@@ -1123,7 +1121,6 @@
       if (userInput.value.trim() && !isGenerating) sendMessage();
     });
 
-    // ===== SUGGESTION CARDS =====
     document.querySelectorAll('.suggestion-card').forEach(card => {
       card.addEventListener('click', () => {
         userInput.value = card.dataset.prompt;
@@ -1131,6 +1128,19 @@
         sendMessage();
       });
     });
+
+    // ===== UI STATE =====
+    function setGeneratingUI(generating) {
+      isGenerating = generating;
+      sendBtn.disabled = generating || !userInput.value.trim();
+      if (generating) {
+        sendBtn.classList.add('hidden');
+        stopBtn.classList.add('visible');
+      } else {
+        sendBtn.classList.remove('hidden');
+        stopBtn.classList.remove('visible');
+      }
+    }
 
     // ===== CONVERSATIONS =====
     function createConversation(firstMessage) {
@@ -1184,8 +1194,6 @@
         item.appendChild(deleteBtn);
         chatHistory.appendChild(item);
       });
-
-      // Clear all button — only when history has items
       if (conversations.length > 0) {
         const clearBtn = document.createElement('button');
         clearBtn.className = 'clear-history-btn';
@@ -1289,14 +1297,14 @@
       el.className = 'message ai-message'; el.id = 'thinking-indicator';
       el.innerHTML = `
         <div class="message-header">
-          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="var(--accent)" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/></svg>
+          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="var(--accent)" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/></svg>
           <span class="message-sender">Core AI</span>
           <span class="model-badge">${modelShort}</span>
         </div>
         <div class="message-body" style="padding:12px 18px;">
           <div class="thinking">
             <div class="thinking-dots"><span></span><span></span><span></span></div>
-            Thinking...
+            Connecting...
           </div>
         </div>
       `;
@@ -1314,15 +1322,18 @@
     }
 
     // ===== SEND MESSAGE =====
-    async function sendMessage(retryText = null) {
-      const text = retryText || userInput.value.trim();
+    async function sendMessage(retryTextArg = null) {
+      const text = retryTextArg || userInput.value.trim();
       if (!text || isGenerating) return;
-      isGenerating = true;
-      sendBtn.disabled = true;
-      if (!retryText) { userInput.value = ''; userInput.style.height = 'auto'; }
+
+      setGeneratingUI(true);
+      setConnStatus('loading', 'Connecting...');
+
+      if (!retryTextArg) { userInput.value = ''; userInput.style.height = 'auto'; }
       if (!currentConversationId) createConversation(text);
       const conv = getCurrentConversation();
-      if (!retryText) {
+
+      if (!retryTextArg) {
         conv.messages.push({ role: 'user', content: text });
         saveConversations();
         welcomeScreen.classList.add('hidden');
@@ -1330,31 +1341,43 @@
         appendMessage('user', text);
         scrollToBottom();
       }
+
       showThinking();
+
       const apiMessages = [
         { role: 'system', content: config.systemPrompt },
         ...conv.messages.map(m => ({ role: m.role, content: m.content }))
       ];
+
       let endpoint = config.endpoint.trim();
       if (!endpoint.includes('/chat/completions')) {
         endpoint = endpoint.replace(/\/+$/, '');
         if (!endpoint.endsWith('/v1')) endpoint += '/v1';
         endpoint += '/chat/completions';
       }
+
       abortController = new AbortController();
+
       const requestBody = {
         model: config.model,
         messages: apiMessages,
         temperature: config.temperature,
-        stream: config.streaming
+        stream: true  // ✅ Always stream
       };
+
       const fetchOptions = {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${config.apiKey}` },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${config.apiKey}`
+        },
         body: JSON.stringify(requestBody)
       };
+
       try {
-        const response = await smartFetch(endpoint, fetchOptions, abortController.signal);
+        // ✅ FIX: direct fetch with timeout, no proxy
+        const response = await fetchWithTimeout(endpoint, fetchOptions, REQUEST_TIMEOUT_MS);
+
         if (!response.ok) {
           let errMsg = `HTTP ${response.status}`;
           try {
@@ -1367,84 +1390,116 @@
           } catch (e) {}
           throw { message: errMsg, status: response.status };
         }
+
+        setConnStatus('ok', '');
         removeThinking();
-        if (config.streaming && response.body) {
-          let content = '';
-          const msgEl = appendMessage('assistant', '');
-          const bodyEl = msgEl.querySelector('.message-body');
-          bodyEl.classList.add('streaming-cursor');
-          const reader = response.body.getReader();
-          const decoder = new TextDecoder();
-          let buffer = '';
-          let renderPending = false;
-          function renderContent() {
-            renderPending = false;
-            bodyEl.innerHTML = safeRenderMarkdown(content);
-            addCopyButtons(msgEl);
-            scrollToBottom();
+
+        // ===== STREAMING RESPONSE =====
+        let content = '';
+        const msgEl = appendMessage('assistant', '');
+        const bodyEl = msgEl.querySelector('.message-body');
+        const timeEl = msgEl.querySelector('.message-time');
+        bodyEl.innerHTML = '<span class="streaming-cursor"></span>';
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+        let renderPending = false;
+
+        function renderContent() {
+          renderPending = false;
+          // Render markdown inline while streaming
+          const rendered = safeRenderMarkdown(content);
+          bodyEl.innerHTML = rendered + '<span class="streaming-cursor"></span>';
+          addCopyButtons(msgEl);
+          scrollToBottom();
+        }
+
+        function scheduleRender() {
+          if (!renderPending) {
+            renderPending = true;
+            // ✅ Throttle renders: every ~40ms (smooth but not CPU heavy)
+            setTimeout(() => requestAnimationFrame(renderContent), 40);
           }
-          function scheduleRender() {
-            if (!renderPending) { renderPending = true; requestAnimationFrame(renderContent); }
-          }
-          try {
-            while (true) {
-              const { done, value } = await reader.read();
-              if (done) break;
-              buffer += decoder.decode(value, { stream: true });
-              const lines = buffer.split('\n');
-              buffer = lines.pop() || '';
-              for (const line of lines) {
-                const trimmed = line.trim();
-                if (!trimmed || trimmed.startsWith(':')) continue;
-                if (trimmed === 'data: [DONE]') continue;
-                if (trimmed.startsWith('data: ')) {
-                  const jsonStr = trimmed.substring(6).trim();
-                  if (!jsonStr || jsonStr === '[DONE]') continue;
-                  try {
-                    const parsed = JSON.parse(jsonStr);
-                    const delta = parsed.choices?.[0]?.delta?.content;
-                    if (delta) { content += delta; scheduleRender(); }
-                  } catch (e) {}
-                }
+        }
+
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop() || '';
+            for (const line of lines) {
+              const trimmed = line.trim();
+              if (!trimmed || trimmed.startsWith(':') || trimmed === 'data: [DONE]') continue;
+              if (trimmed.startsWith('data: ')) {
+                const jsonStr = trimmed.substring(6).trim();
+                if (!jsonStr || jsonStr === '[DONE]') continue;
+                try {
+                  const parsed = JSON.parse(jsonStr);
+                  const delta = parsed.choices?.[0]?.delta?.content;
+                  if (delta) {
+                    content += delta;
+                    scheduleRender();
+                  }
+                } catch (e) {}
               }
             }
-          } catch (streamErr) { if (streamErr.name === 'AbortError') throw streamErr; }
-          bodyEl.classList.remove('streaming-cursor');
-          if (content.length > 0) {
-            bodyEl.innerHTML = safeRenderMarkdown(content);
-            addCopyButtons(msgEl);
-            scrollToBottom();
-            conv.messages.push({ role: 'assistant', content });
-            saveConversations();
-          } else {
-            msgEl.remove();
-            showThinking();
-            const retryResponse = await smartFetch(endpoint, { ...fetchOptions, body: JSON.stringify({ ...requestBody, stream: false }) }, abortController.signal);
-            removeThinking();
-            if (!retryResponse.ok) throw { message: `Retry failed: HTTP ${retryResponse.status}`, status: retryResponse.status };
-            const retryText2 = await retryResponse.text();
-            const retryContent = parseResponseText(retryText2);
-            if (!retryContent) throw { message: 'Empty response from API.' };
-            appendMessage('assistant', retryContent);
-            scrollToBottom();
-            conv.messages.push({ role: 'assistant', content: retryContent });
-            saveConversations();
           }
-        } else {
-          const rawText = await response.text();
-          const content = parseResponseText(rawText);
-          if (!content) throw { message: 'Empty response. Try a different model.' };
-          appendMessage('assistant', content);
+        } catch (streamErr) {
+          if (streamErr.name === 'AbortError') throw streamErr;
+          // Partial content is still valuable — don't throw, just finish
+        }
+
+        // Final render without cursor
+        if (content.length > 0) {
+          bodyEl.innerHTML = safeRenderMarkdown(content);
+          addCopyButtons(msgEl);
           scrollToBottom();
           conv.messages.push({ role: 'assistant', content });
           saveConversations();
+        } else {
+          // Empty streaming — remove placeholder
+          msgEl.remove();
+          throw { message: 'Empty response from API. Try a different model.' };
         }
+
       } catch (error) {
         if (error.name === 'AbortError') {
-          removeThinking(); isGenerating = false; sendBtn.disabled = !userInput.value.trim(); return;
+          // User stopped or timeout
+          removeThinking();
+          setConnStatus('', '');
+          // If we had partial content, keep it
+          const existing = messagesContainer.querySelector('.streaming-cursor');
+          if (existing) {
+            existing.remove();
+            const bodyEl = messagesContainer.querySelector('.ai-message:last-child .message-body');
+            if (bodyEl) {
+              const partial = bodyEl.innerText;
+              if (partial.trim()) {
+                // Save partial
+                const conv2 = getCurrentConversation();
+                if (conv2) {
+                  conv2.messages.push({ role: 'assistant', content: partial + '\n\n_(generation stopped)_' });
+                  saveConversations();
+                }
+              } else {
+                messagesContainer.querySelector('.ai-message:last-child')?.remove();
+              }
+            }
+          }
+          setGeneratingUI(false);
+          abortController = null;
+          sendBtn.disabled = !userInput.value.trim();
+          userInput.focus();
+          return;
         }
+
         removeThinking();
-        let errorHtml = `<p>⚠️ <strong>Error:</strong> ${escapeHtml(error.message || String(error))}</p>`;
+        setConnStatus('err', 'Error');
+
+        const displayErr = error.message || String(error);
         const errMsg = document.createElement('div');
         errMsg.className = 'message ai-message';
         errMsg.innerHTML = `
@@ -1455,44 +1510,18 @@
             <span class="message-sender" style="color:var(--error-color)">Error</span>
           </div>
           <div class="message-body" style="border-color:rgba(239,68,68,0.3);background:rgba(239,68,68,0.05);">
-            ${errorHtml}
+            <p>⚠️ <strong>${escapeHtml(displayErr)}</strong></p>
             <button class="retry-btn" onclick="retryLastMessage()">↻ Retry</button>
           </div>
         `;
         messagesContainer.appendChild(errMsg);
         scrollToBottom();
       }
-      isGenerating = false;
+
+      setGeneratingUI(false);
       abortController = null;
       sendBtn.disabled = !userInput.value.trim();
       userInput.focus();
-    }
-
-    // ===== PARSE RESPONSE =====
-    function parseResponseText(rawText) {
-      try {
-        const data = JSON.parse(rawText);
-        const content = data.choices?.[0]?.message?.content || data.choices?.[0]?.text || data.content || '';
-        if (content) return content;
-        if (data.error) return null;
-      } catch (e) {}
-      if (rawText.includes('data: ')) {
-        const lines = rawText.split(/\r?\n/);
-        const parts = [];
-        for (const line of lines) {
-          const t = line.trim();
-          if (t.startsWith('data: ') && t !== 'data: [DONE]') {
-            try {
-              const p = JSON.parse(t.substring(6));
-              const d = p.choices?.[0]?.delta?.content || p.choices?.[0]?.message?.content;
-              if (d) parts.push(d);
-            } catch (e2) {}
-          }
-        }
-        if (parts.length > 0) return parts.join('');
-      }
-      if (rawText.length > 0 && rawText.length < 100000) return rawText;
-      return null;
     }
 
     // ===== RETRY =====
@@ -1517,16 +1546,6 @@
       sendMessage(lastUserMsg);
     }
 
-    // ===== ERROR HANDLER =====
-    window.addEventListener('unhandledrejection', (e) => {
-      if (isGenerating) {
-        isGenerating = false; abortController = null;
-        sendBtn.disabled = !userInput.value.trim();
-        removeThinking();
-        showToast('Unexpected error occurred', 'error');
-      }
-    });
-
     // ===== KEYBOARD SHORTCUTS =====
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
@@ -1534,10 +1553,7 @@
         document.getElementById('mobileOverlay').classList.remove('active');
         if (isGenerating && abortController) {
           abortController.abort();
-          removeThinking();
-          isGenerating = false;
-          sendBtn.disabled = !userInput.value.trim();
-          showToast('Generation cancelled', 'info');
+          showToast('Generation stopped', 'info');
         }
       }
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'N') {
@@ -1565,7 +1581,7 @@
     // ===== INIT =====
     renderChatHistory();
     userInput.focus();
-    console.log('[Core AI] Loaded. Model:', config.model);
+    console.log('[Core AI v12] Loaded. Model:', config.model, '| Streaming: ON');
   </script>
 </body>
 </html>
