@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://js.puter.com/v2/"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
   <style>
@@ -71,8 +72,9 @@
 
     
     .main { flex: 1; display: flex; flex-direction: column; position: relative; z-index: 10; height: 100vh; overflow: hidden; }
-    .welcome { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px; text-align: center; }
+    .welcome { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px; text-align: center; transition: opacity 0.3s ease, transform 0.3s ease; }
     .welcome.hidden { display: none; }
+    .welcome.fade-out { opacity: 0; transform: translateY(-10px); pointer-events: none; }
     .welcome h1 { font-size: 42px; font-weight: 600; letter-spacing: -1px; margin-bottom: 10px; background: linear-gradient(135deg, #fff, #999); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
     .welcome p { font-size: 16px; color: var(--text-secondary); max-width: 400px; line-height: 1.6; }
     .suggestions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 36px; max-width: 520px; width: 100%; }
@@ -84,8 +86,9 @@
     .s-title { font-size: 13px; font-weight: 500; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .s-desc { font-size: 11px; color: var(--text-muted); line-height: 1.4; }
 
-    .chat-area { flex: 1; overflow-y: auto; padding: 20px 0; display: none; }
+    .chat-area { flex: 1; overflow-y: auto; padding: 20px 0; display: none; opacity: 0; }
     .chat-area.active { display: block; }
+    .chat-area.visible { opacity: 1; transition: opacity 0.3s ease; }
     .chat-area::-webkit-scrollbar { width: 6px; }
     .chat-area::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.06); border-radius: 3px; }
     .msg-container { max-width: 760px; margin: 0 auto; padding: 0 24px; }
@@ -95,28 +98,88 @@
     .message.ai-msg { align-items: flex-start; }
     @keyframes msgIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
 
+    /* Nav strips */
+    .nav-strips {
+      position: fixed; right: 18px; top: 50%; transform: translateY(-50%);
+      display: flex; flex-direction: column; gap: 18px; z-index: 30;
+      opacity: 0; transition: opacity 0.2s ease; pointer-events: none;
+      max-height: 70vh; justify-content: center; align-items: center;
+    }
+    .nav-strips.visible { opacity: 1; pointer-events: auto; }
+    .nav-strip {
+      width: 24px; height: 4px; border-radius: 2px;
+      background: rgba(255,255,255,0.2); cursor: pointer;
+      transition: background 0.15s ease, opacity 0.15s ease; border: none; padding: 0;
+      flex-shrink: 0;
+    }
+    .nav-strip:hover { background: var(--accent); opacity: 0.8; }
+    .nav-strip.active { background: var(--accent); opacity: 1; }
+
     .msg-header { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; padding: 0 4px; }
     .user-msg .msg-header { display: none; }
     .msg-sender { font-size: 12px; font-weight: 600; color: var(--text-secondary); }
 
-    .msg-body { font-size: 15px; line-height: 1.7; color: var(--text-primary); max-width: 85%; position: relative; }
+    .msg-body { font-size: 15px; line-height: 1.75; color: var(--text-primary); max-width: 85%; position: relative; }
     .user-msg .msg-body { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.10); padding: 10px 16px; border-radius: 20px 20px 4px 20px; word-break: break-word; backdrop-filter: blur(16px); }
-    .ai-msg .msg-body { background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); padding: 14px 18px; border-radius: 4px 20px 20px 20px; backdrop-filter: blur(16px); }
+    .ai-msg .msg-body { background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); padding: 18px 22px; border-radius: 4px 20px 20px 20px; backdrop-filter: blur(16px); }
 
-    .msg-body p { margin-bottom: 10px; }
+    .msg-body p { margin: 0 0 12px; }
     .msg-body p:last-child { margin-bottom: 0; }
-    .msg-body code { background: rgba(255,255,255,0.06); padding: 2px 6px; border-radius: 4px; font-size: 13px; font-family: 'Fira Code', monospace; border: 1px solid var(--border-color); }
-    .msg-body pre { background: rgba(0,0,0,0.4); border: 1px solid var(--border-color); border-radius: 10px; padding: 16px; margin: 10px 0; overflow-x: auto; position: relative; }
-    .msg-body pre code { background: none !important; padding: 0; border: none !important; font-size: 13px; line-height: 1.6; }
-    .msg-body ul, .msg-body ol { padding-left: 20px; margin: 8px 0; }
-    .msg-body li { margin-bottom: 4px; }
-    .msg-body blockquote { border-left: 3px solid var(--accent); padding-left: 16px; margin: 12px 0; color: var(--text-secondary); }
-    .msg-body h1, .msg-body h2, .msg-body h3 { margin: 16px 0 8px; font-weight: 600; }
-    .msg-body h1 { font-size: 22px; } .msg-body h2 { font-size: 18px; } .msg-body h3 { font-size: 16px; }
-    .msg-body a { color: var(--accent); text-decoration: none; } .msg-body a:hover { text-decoration: underline; }
-    .msg-body table { border-collapse: collapse; margin: 12px 0; width: 100%; }
-    .msg-body th, .msg-body td { border: 1px solid var(--border-color); padding: 8px 12px; text-align: left; }
-    .msg-body th { background: rgba(255,255,255,0.04); font-weight: 600; }
+    /* Prevent double spacing when p follows heading */
+    .msg-body h1 + p, .msg-body h2 + p, .msg-body h3 + p, .msg-body h4 + p { margin-top: 0; }
+
+    /* Headings — softer weight, tighter scale */
+    .msg-body h1, .msg-body h2, .msg-body h3, .msg-body h4 { font-weight: 600; line-height: 1.35; color: var(--text-primary); margin: 20px 0 8px; }
+    .msg-body h1 { font-size: 19px; letter-spacing: -0.3px; }
+    .msg-body h2 { font-size: 16px; letter-spacing: -0.2px; color: rgba(240,240,240,0.92); padding-bottom: 7px; border-bottom: 1px solid rgba(255,255,255,0.07); margin-bottom: 10px; }
+    .msg-body h3 { font-size: 14.5px; font-weight: 600; color: rgba(240,240,240,0.8); margin: 16px 0 6px; }
+    .msg-body h4 { font-size: 13.5px; font-weight: 500; color: var(--text-secondary); margin: 14px 0 5px; }
+    /* No top margin on first element */
+    .msg-body > *:first-child { margin-top: 0 !important; }
+
+    /* Lists */
+    .msg-body ul, .msg-body ol { padding-left: 0; margin: 6px 0 14px; list-style: none; }
+    .msg-body ul li, .msg-body ol li { position: relative; padding-left: 18px; margin-bottom: 7px; line-height: 1.7; color: rgba(240,240,240,0.9); }
+    .msg-body ul li::before { content: ''; position: absolute; left: 2px; top: 10px; width: 4px; height: 4px; border-radius: 50%; background: var(--accent); opacity: 0.75; }
+    .msg-body ol { counter-reset: li; }
+    .msg-body ol li::before { counter-increment: li; content: counter(li) '.'; position: absolute; left: 0; top: 0; color: var(--accent); font-size: 13px; font-weight: 600; opacity: 0.8; }
+    .msg-body li:last-child { margin-bottom: 0; }
+    /* Nested lists */
+    .msg-body ul ul, .msg-body ol ol, .msg-body ul ol, .msg-body ol ul { margin: 5px 0 5px 16px; }
+
+    /* Inline code */
+    .msg-body code { background: rgba(255,255,255,0.06); padding: 2px 7px; border-radius: 5px; font-size: 13px; font-family: 'Fira Code', 'Consolas', monospace; border: 1px solid var(--border-color); color: #e0b8c8; }
+
+    /* Code blocks */
+    .msg-body pre { background: rgba(0,0,0,0.45); border: 1px solid var(--border-color); border-radius: 10px; padding: 16px; margin: 12px 0; overflow-x: auto; position: relative; }
+    .msg-body pre code { background: none !important; padding: 0; border: none !important; font-size: 13px; line-height: 1.65; color: inherit; }
+
+    /* Blockquote */
+    .msg-body blockquote { border-left: 3px solid var(--accent); padding: 8px 16px; margin: 12px 0; color: var(--text-secondary); background: rgba(196,116,142,0.05); border-radius: 0 8px 8px 0; }
+    .msg-body blockquote p { margin: 0; }
+
+    /* Links */
+    .msg-body a { color: var(--accent); text-decoration: none; border-bottom: 1px solid rgba(196,116,142,0.3); transition: border-color 0.15s; }
+    .msg-body a:hover { border-color: var(--accent); }
+
+    /* Horizontal rule */
+    .msg-body hr { border: none; border-top: 1px solid var(--border-color); margin: 16px 0; }
+
+    /* Strong / em */
+    .msg-body strong { font-weight: 650; color: rgba(255,255,255,0.95); }
+    .msg-body em { color: rgba(240,240,240,0.8); font-style: italic; }
+
+    /* Tables */
+    .msg-body table { border-collapse: collapse; margin: 14px 0; width: 100%; font-size: 14px; border-radius: 10px; overflow: hidden; border: 1px solid rgba(255,255,255,0.07); }
+    .msg-body thead { background: rgba(255,255,255,0.04); }
+    .msg-body th { padding: 10px 16px; font-weight: 600; font-size: 13px; color: rgba(255,255,255,0.75); text-align: left; border-bottom: 1px solid rgba(255,255,255,0.07); letter-spacing: 0.02em; }
+    .msg-body td { padding: 10px 16px; border-bottom: 1px solid rgba(255,255,255,0.04); color: rgba(240,240,240,0.75); font-size: 14px; line-height: 1.6; }
+    .msg-body tr:last-child td { border-bottom: none; }
+    .msg-body tbody tr:hover td { background: rgba(255,255,255,0.025); color: rgba(240,240,240,0.9); transition: all 0.12s ease; }
+
+    /* Strong / em */
+    .msg-body strong { font-weight: 650; color: rgba(255,255,255,0.97); }
+    .msg-body em { color: rgba(240,240,240,0.75); font-style: italic; }
     .msg-time { font-size: 10px; color: var(--text-muted); margin-top: 4px; padding: 0 4px; }
 
     
@@ -289,6 +352,7 @@
     <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="20" height="20"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
   </button>
   <div class="mob-overlay" id="mobOverlay"></div>
+  <div class="nav-strips" id="navStrips"></div>
 
   <aside class="sidebar intro-sb" id="sidebar">
     <div class="sidebar-top">
@@ -354,12 +418,10 @@
                   <svg class="dd-arrow" width="12" height="12" fill="none" viewBox="0 0 12 12" stroke="currentColor" stroke-width="2"><path d="M3 4.5l3 3 3-3"/></svg>
                 </button>
                 <div class="model-dd-panel" id="modelDdPanel">
-                  <div class="model-opt" data-value="anthropic/claude-sonnet-4.5">claude-sonnet-4.5</div>
-                  <div class="model-opt" data-value="anthropic/claude-opus-4.5">claude-opus-4.5</div>
-                  <div class="model-opt" data-value="openai/gpt-4o">gpt-4o</div>
-                  <div class="model-opt" data-value="openai/gpt-5">gpt-5</div>
-                  <div class="model-opt" data-value="deepseek/deepseek-v3.2">deepseek-v3.2</div>
-                  <div class="model-opt" data-value="google/gemini-3">gemini-3</div>
+                  <div class="model-opt" data-value="claude-sonnet-4-5">claude-sonnet-4.5</div>
+                  <div class="model-opt" data-value="claude-opus-4-5">claude-opus-4.5</div>
+                  <div class="model-opt" data-value="deepseek/deepseek-chat">deepseek-v3.2</div>
+                  <div class="model-opt" data-value="google/gemini-2.5-flash">gemini-2.5-flash</div>
                 </div>
               </div>
             </div>
@@ -384,28 +446,21 @@
   <script>
   (() => {
     
-    const API_KEY  = 'sk--Wyh0R57LMDmHRzxVBsC2qXDoDvOMrdjIWsozCM6Pdk';
-    const ENDPOINT = 'https://freeaiapikey.com/v1/chat/completions';
-    const SYS      = 'You are a helpful, friendly, and knowledgeable AI assistant. Provide clear, accurate, well-structured responses. Use markdown code blocks with language tags for code. Respond in the same language the user writes in.';
-    const IDLE_MS  = 60000; 
-    const CONN_MS  = 90000; 
+    const SYS   = 'You are a helpful, friendly, and knowledgeable AI assistant. Provide clear, accurate, well-structured responses. Use markdown code blocks with language tags for code. Respond in the same language the user writes in.';
 
     
-    if (localStorage.getItem('ai_ver') !== 'v14') {
-      localStorage.setItem('ai_ver', 'v14');
+    if (localStorage.getItem('ai_ver') !== 'v15') {
+      localStorage.setItem('ai_ver', 'v15');
       localStorage.removeItem('ai_model');
     }
-    let model    = localStorage.getItem('ai_model') || 'anthropic/claude-sonnet-4.5';
+    let model    = localStorage.getItem('ai_model') || 'claude-sonnet-4-5';
     let convs    = JSON.parse(localStorage.getItem('ai_convs') || '[]');
     let curId    = null;
     let genning  = false;
-    let abort    = null;
-    let idleT    = null;
+    let stopFlag = false; // used to stop puter streaming
     let attachedImg = null; // { dataUrl, mimeType, base64 }
 
     
-    const VISION_MODELS = ['deepseek/deepseek-v3.2', 'google/gemini-3'];
-    function supportsVision() { return VISION_MODELS.some(m => model.startsWith(m.split('/')[0]) && model.includes(m.split('/')[1]?.split('-')[0] || '')); }
     function isVision(m) { return m.includes('deepseek') || m.includes('gemini'); }
 
     
@@ -506,7 +561,7 @@
       v ? (sendBtn.classList.add('hidden'), stopBtn.classList.add('visible'))
         : (sendBtn.classList.remove('hidden'), stopBtn.classList.remove('visible'));
     }
-    stopBtn.addEventListener('click', () => { if (abort) abort.abort(); });
+    stopBtn.addEventListener('click', () => { stopFlag = true; });
 
     
 
@@ -659,14 +714,22 @@
     }
     function loadConv(id) {
       curId = id; const conv = curConv(); if (!conv) return;
-      welcome.classList.add('hidden'); chatArea.classList.add('active');
+      chatArea.classList.remove('visible');
+      chatArea.classList.add('active');
+      welcome.classList.add('hidden');
       msgs.innerHTML = '';
       conv.messages.forEach(m => appendMsg(m.role, m.content, m._img || null, false));
+      requestAnimationFrame(() => {
+        chatArea.classList.add('visible');
+        buildNavStrips();
+      });
       renderHist(); scrollBot(); closeMob(); sidebar.classList.remove('expanded');
     }
     function newChat() {
-      curId = null; welcome.classList.remove('hidden'); chatArea.classList.remove('active');
-      msgs.innerHTML = ''; renderHist(); userInput.focus(); closeMob();
+      curId = null;
+      hideChat();
+      msgs.innerHTML = '';
+      renderHist(); userInput.focus(); closeMob();
     }
     function exportChat() {
       const conv = curConv();
@@ -724,11 +787,80 @@
       const el = document.createElement('div');
       el.className = 'message ai-msg'; el.id = 'think';
       el.innerHTML = `<div class="msg-header">${AI_ICON}<span class="msg-sender">Core AI</span><span class="model-badge">${model.split('/').pop()}</span></div>
-        <div class="msg-body" style="padding:12px 18px;"><div class="thinking"><div class="thinking-dots"><span></span><span></span><span></span></div>Connecting…</div></div>`;
+        <div class="msg-body" style="padding:12px 18px;"><div class="thinking"><div class="thinking-dots"><span></span><span></span><span></span></div>Thinking…</div></div>`;
       msgs.appendChild(el); scrollBot();
     }
     function rmThinking() { document.getElementById('think')?.remove(); }
-    function scrollBot() { requestAnimationFrame(() => { chatArea.scrollTop = chatArea.scrollHeight; }); }
+    // Nav strips
+    const navStrips = document.getElementById('navStrips');
+    let stripTimeout = null;
+
+    function buildNavStrips() {
+      navStrips.innerHTML = '';
+      const userMsgs = msgs.querySelectorAll('.user-msg');
+      if (userMsgs.length < 2) { navStrips.classList.remove('visible'); return; }
+      navStrips.classList.add('visible');
+      userMsgs.forEach((msgEl, i) => {
+        const strip = document.createElement('button');
+        strip.className = 'nav-strip';
+        strip.title = msgEl.querySelector('.msg-body')?.textContent?.slice(0, 60) || `Message ${i + 1}`;
+        strip.addEventListener('click', () => {
+          msgEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          // Highlight active strip briefly
+          navStrips.querySelectorAll('.nav-strip').forEach(s => s.classList.remove('active'));
+          strip.classList.add('active');
+          setTimeout(() => strip.classList.remove('active'), 1200);
+        });
+        navStrips.appendChild(strip);
+      });
+      updateActiveStrip();
+    }
+
+    function updateActiveStrip() {
+      const userMsgs = [...msgs.querySelectorAll('.user-msg')];
+      if (!userMsgs.length) return;
+      const scrollMid = chatArea.scrollTop + chatArea.clientHeight / 2;
+      let closest = 0, minDist = Infinity;
+      userMsgs.forEach((el, i) => {
+        const dist = Math.abs(el.offsetTop - scrollMid);
+        if (dist < minDist) { minDist = dist; closest = i; }
+      });
+      navStrips.querySelectorAll('.nav-strip').forEach((s, i) => {
+        s.classList.toggle('active', i === closest);
+      });
+    }
+
+    chatArea.addEventListener('scroll', () => {
+      updateActiveStrip();
+    });
+
+    // Smooth welcome → chat transition
+    function showChat() {
+      if (!welcome.classList.contains('hidden')) {
+        welcome.classList.add('fade-out');
+        setTimeout(() => {
+          welcome.classList.add('hidden');
+          welcome.classList.remove('fade-out');
+          chatArea.classList.add('active');
+          requestAnimationFrame(() => chatArea.classList.add('visible'));
+        }, 250);
+      } else {
+        chatArea.classList.add('active');
+        requestAnimationFrame(() => chatArea.classList.add('visible'));
+      }
+    }
+
+    function hideChat() {
+      chatArea.classList.remove('visible');
+      setTimeout(() => {
+        chatArea.classList.remove('active');
+        welcome.classList.remove('hidden');
+        navStrips.classList.remove('visible');
+        navStrips.innerHTML = '';
+      }, 200);
+    }
+
+    function scrollBot() { requestAnimationFrame(() => { chatArea.scrollTop = chatArea.scrollHeight; updateActiveStrip(); }); }
 
     // Restore an unanswered user message back to the input box and remove it from history.
     // Called whenever a request fails with no AI response saved.
@@ -762,8 +894,9 @@
       const img  = retryImgArg || attachedImg;
       if (!text && !img || genning) return;
       setGen(true);
+      stopFlag = false;
 
-      const sentImg = img; 
+      const sentImg = img;
       if (!retryArg) {
         userInput.value=''; userInput.style.height='auto';
         clearImg();
@@ -772,171 +905,101 @@
       const conv = curConv();
 
       if (!retryArg) {
-        
         const storedContent = text || '[image]';
         conv.messages.push({role:'user', content: storedContent, _img: sentImg ? {dataUrl: sentImg.dataUrl, mimeType: sentImg.mimeType, base64: sentImg.base64} : null});
         saveConvs();
-        welcome.classList.add('hidden'); chatArea.classList.add('active');
+        showChat();
         appendMsg('user', text, sentImg); scrollBot();
+        buildNavStrips();
       }
       showThinking();
-      abort = new AbortController();
 
-      
-      const apiMessages = conv.messages.map(m => {
-        if (m._img && isVision(model)) {
-          const parts = [];
-          if (m.content && m.content !== '[image]') parts.push({type:'text', text: m.content});
-          parts.push({type:'image_url', image_url:{url:`data:${m._img.mimeType};base64,${m._img.base64}`}});
-          return {role: m.role, content: parts};
-        }
-        return {role: m.role, content: m.content};
-      });
-
-      const body = {
-        model, temperature: 0.7, stream: true,
-        messages: [{role:'system',content:SYS}, ...apiMessages]
-      };
-
-      
-      function resetIdle() {
-        clearTimeout(idleT);
-        idleT = setTimeout(() => { if (genning && abort) abort.abort(); }, IDLE_MS);
-      }
-
-      
-      const connTimer = setTimeout(() => { if (genning && abort) abort.abort(); }, CONN_MS);
+      // Build messages for puter.js
+      const puterMessages = [
+        {role:'system', content: SYS},
+        ...conv.messages.map(m => {
+          if (m._img && isVision(model)) {
+            const parts = [];
+            if (m.content && m.content !== '[image]') parts.push({type:'text', text: m.content});
+            parts.push({type:'image_url', image_url:{url:`data:${m._img.mimeType};base64,${m._img.base64}`}});
+            return {role: m.role, content: parts};
+          }
+          return {role: m.role, content: m.content};
+        })
+      ];
 
       try {
-        resetIdle();
-        const resp = await fetch(ENDPOINT, {
-          method:'POST',
-          headers:{'Content-Type':'application/json','Authorization':`Bearer ${API_KEY}`},
-          body: JSON.stringify(body),
-          signal: abort.signal
-        });
-        clearTimeout(connTimer);
-
-        if (!resp.ok) {
-          let errMsg = `HTTP ${resp.status}`;
-          try { const j=await resp.json(); errMsg=j.error?.message||j.message||errMsg; } catch { try { errMsg=await resp.text()||errMsg; } catch {} }
-          throw new Error(errMsg);
-        }
-
-        rmThinking();
-
-        
-        const reader = resp.body.getReader();
-        const dec = new TextDecoder();
-        let buf = '', content = '', gotAny = false;
-
-        const msgEl = appendMsg('assistant','');
-        const bodyEl = msgEl.querySelector('.msg-body');
-
-        
-        const cursor = document.createElement('span');
-        cursor.className = 'stream-cursor';
-        bodyEl.innerHTML = '';
-        bodyEl.appendChild(cursor);
-
+        // Don't remove thinking yet — wait for first token
+        let msgEl = null;
+        let bodyEl = null;
+        let cursor = null;
+        let content = '';
         let rafId = null;
         let rendered = '';
-        let streaming = true; 
+        let streaming = true;
+        let firstToken = true;
 
         function flush() {
           rafId = null;
           if (content === rendered) return;
           rendered = content;
           bodyEl.innerHTML = md(content);
-          if (streaming) bodyEl.appendChild(cursor); 
+          if (streaming) bodyEl.appendChild(cursor);
           copify(msgEl);
           scrollBot();
         }
-        function schedFlush() {
-          if (!rafId) rafId = requestAnimationFrame(flush);
-        }
+        function schedFlush() { if (!rafId) rafId = requestAnimationFrame(flush); }
 
-        try {
-          while (true) {
-            resetIdle();
-            const {done, value} = await reader.read();
-            if (done) break;
-            buf += dec.decode(value, {stream:true});
-            const lines = buf.split('\n'); buf = lines.pop() ?? '';
-            for (const line of lines) {
-              const t = line.trim();
-              if (!t || t === 'data: [DONE]') continue;
-              if (t.startsWith('data: ')) {
-                try {
-                  const j = JSON.parse(t.slice(6));
-                  const delta = j.choices?.[0]?.delta?.content;
-                  if (delta) { content += delta; gotAny = true; schedFlush(); }
-                } catch {}
-              }
+        // Call puter.ai.chat with streaming
+        const response = await puter.ai.chat(puterMessages, { model, stream: true });
+
+        for await (const part of response) {
+          if (stopFlag) break;
+          const delta = part?.text || '';
+          if (delta) {
+            // On first token — remove thinking, create message element
+            if (firstToken) {
+              firstToken = false;
+              rmThinking();
+              msgEl = appendMsg('assistant','');
+              bodyEl = msgEl.querySelector('.msg-body');
+              cursor = document.createElement('span');
+              cursor.className = 'stream-cursor';
+              bodyEl.innerHTML = '';
+              bodyEl.appendChild(cursor);
             }
-          }
-        } catch(se) {
-          if (se.name === 'AbortError') { /* handled below */ }
-          else {
-            
-            streaming = false;
-            clearTimeout(idleT);
-            if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
-            cursor.remove();
-            msgEl.remove();
-            toast('Connection dropped, retrying…', 'info');
-            await fallback(conv, body);
-            setGen(false); abort=null; sendBtn.disabled=!userInput.value.trim(); userInput.focus(); return;
+            content += delta;
+            schedFlush();
           }
         }
 
-        
+        // Finalize
         streaming = false;
-        clearTimeout(idleT);
         if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
-        cursor.remove();
+        if (cursor) cursor.remove();
 
-        if (content.trim()) {
-          
+        if (firstToken) {
+          // No tokens at all received
+          rmThinking();
+          if (!stopFlag) toast('Empty response, try again', 'info');
+        } else if (content.trim()) {
           bodyEl.innerHTML = md(content);
           copify(msgEl); scrollBot();
-          conv.messages.push({role:'assistant',content}); saveConvs();
-        } else if (!gotAny) {
-          
-          msgEl.remove();
-          await fallback(conv, body);
+          conv.messages.push({role:'assistant', content}); saveConvs();
+          buildNavStrips();
         } else {
-          
-          if (content) { conv.messages.push({role:'assistant',content}); saveConvs(); }
-          else msgEl.remove();
+          msgEl.remove();
+          if (!stopFlag) toast('Empty response, try again', 'info');
         }
+
+        if (stopFlag) toast('Stopped', 'info');
 
       } catch(err) {
-        clearTimeout(connTimer); clearTimeout(idleT);
         rmThinking();
-        
         document.querySelector('.stream-cursor')?.remove();
-        const lastAi = msgs.querySelector('.ai-msg:last-child');
-
-        if (err.name === 'AbortError') {
-          
-          const partText = lastAi?.querySelector('.msg-body')?.innerText?.trim();
-          if (partText) { conv.messages.push({role:'assistant',content:partText}); saveConvs(); }
-          else lastAi?.remove();
-          toast('Stopped', 'info');
-          setGen(false); abort=null; sendBtn.disabled=!userInput.value.trim(); userInput.focus(); return;
-        }
-
-        
-        const isNetworkErr = err instanceof TypeError || (err.message && err.message.toLowerCase().includes('network'));
-        lastAi?.remove();
-        if (isNetworkErr) {
-          toast('Network error, retrying without streaming…', 'info');
-          await fallback(conv, body);
-          setGen(false); abort=null; sendBtn.disabled=!userInput.value.trim() && !attachedImg; userInput.focus(); return;
-        }
-        // API error (4xx/5xx etc.) — restore the unanswered user message
+        msgs.querySelector('.ai-msg:last-child')?.remove();
         restoreUserMsg(conv);
+
         const errEl = document.createElement('div');
         errEl.className='message ai-msg';
         errEl.innerHTML = `
@@ -951,45 +1014,9 @@
         msgs.appendChild(errEl); scrollBot();
       }
 
-      setGen(false); abort=null; sendBtn.disabled=!userInput.value.trim(); userInput.focus();
-    }
-
-    
-    async function fallback(conv, origBody) {
-      showThinking();
-      try {
-        const ctrl = new AbortController();
-        const t = setTimeout(() => ctrl.abort(), CONN_MS);
-        const r = await fetch(ENDPOINT, {
-          method:'POST',
-          headers:{'Content-Type':'application/json','Authorization':`Bearer ${API_KEY}`},
-          body: JSON.stringify({...origBody, stream:false}),
-          signal: ctrl.signal
-        });
-        clearTimeout(t); rmThinking();
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        const j = await r.json();
-        const content = j.choices?.[0]?.message?.content||'';
-        if (!content) throw new Error('Empty response. Try a different model.');
-        appendMsg('assistant', content); scrollBot();
-        conv.messages.push({role:'assistant',content}); saveConvs();
-      } catch(e) {
-        rmThinking();
-        // Restore the unanswered user message so the next send won't duplicate it
-        restoreUserMsg(conv);
-        const errEl = document.createElement('div');
-        errEl.className='message ai-msg';
-        errEl.innerHTML = `
-          <div class="msg-header">
-            <svg class="ai-icon" fill="none" viewBox="0 0 24 24" stroke="#ef4444" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/></svg>
-            <span class="msg-sender" style="color:#ef4444">Error</span>
-          </div>
-          <div class="msg-body" style="border-color:rgba(239,68,68,0.3);background:rgba(239,68,68,0.05);">
-            <p>⚠️ ${esc(e.message||String(e))}</p>
-            <button class="retry-btn" onclick="window._retryLast()">↻ Retry</button>
-          </div>`;
-        msgs.appendChild(errEl); scrollBot();
-      }
+      setGen(false); stopFlag = false;
+      sendBtn.disabled = !userInput.value.trim() && !attachedImg;
+      userInput.focus();
     }
 
     window._retryLast = function() {
@@ -1006,7 +1033,7 @@
       if (e.key==='Escape') {
         if (lightbox.classList.contains('open')) { lightbox.classList.remove('open'); return; }
         closeMob();
-        if (genning && abort) abort.abort();
+        if (genning) stopFlag = true;
       }
       if((e.ctrlKey||e.metaKey)&&e.shiftKey&&e.key==='N'){e.preventDefault();newChat();}
     });
