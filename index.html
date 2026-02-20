@@ -11,6 +11,9 @@
   <script src="https://js.puter.com/v2/"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/docx@8.2.3/build/index.umd.min.js"></script>
   <style>
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
     :root {
@@ -118,13 +121,17 @@
     .msg-body h3 { font-size: 14.5px; font-weight: 600; color: rgba(240,240,240,0.8); margin: 16px 0 6px; }
     .msg-body h4 { font-size: 13.5px; font-weight: 500; color: var(--text-secondary); margin: 14px 0 5px; }
     .msg-body > *:first-child { margin-top: 0 !important; }
-    .msg-body ul, .msg-body ol { padding-left: 0; margin: 6px 0 14px; list-style: none; }
-    .msg-body ul li, .msg-body ol li { position: relative; padding-left: 18px; margin-bottom: 7px; line-height: 1.7; color: rgba(240,240,240,0.9); }
-    .msg-body ul li::before { content: ''; position: absolute; left: 2px; top: 10px; width: 4px; height: 4px; border-radius: 50%; background: var(--accent); opacity: 0.75; }
-    .msg-body ol { counter-reset: li; }
-    .msg-body ol li::before { counter-increment: li; content: counter(li) '.'; position: absolute; left: 0; top: 0; color: var(--accent); font-size: 13px; font-weight: 600; opacity: 0.8; }
+
+    /* --- FIXED LIST STYLES: use native rendering to avoid dot+number conflicts --- */
+    .msg-body ul, .msg-body ol { padding-left: 22px; margin: 6px 0 14px; }
+    .msg-body ul { list-style-type: disc; }
+    .msg-body ol { list-style-type: decimal; }
+    .msg-body ul li, .msg-body ol li { margin-bottom: 7px; line-height: 1.7; color: rgba(240,240,240,0.9); padding-left: 4px; }
+    .msg-body ul li::marker { color: var(--accent); font-size: 12px; }
+    .msg-body ol li::marker { color: var(--accent); font-size: 13px; font-weight: 600; }
     .msg-body li:last-child { margin-bottom: 0; }
-    .msg-body ul ul, .msg-body ol ol, .msg-body ul ol, .msg-body ol ul { margin: 5px 0 5px 16px; }
+    .msg-body ul ul, .msg-body ol ol, .msg-body ul ol, .msg-body ol ul { margin: 5px 0 5px 8px; }
+
     .msg-body code { background: rgba(255,255,255,0.06); padding: 2px 7px; border-radius: 5px; font-size: 13px; font-family: 'Fira Code', 'Consolas', monospace; border: 1px solid var(--border-color); color: #e0b8c8; }
     .msg-body pre { background: rgba(0,0,0,0.45); border: 1px solid var(--border-color); border-radius: 10px; padding: 16px; margin: 12px 0; overflow-x: auto; position: relative; }
     .msg-body pre code { background: none !important; padding: 0; border: none !important; font-size: 13px; line-height: 1.65; color: inherit; }
@@ -156,7 +163,8 @@
     .ai-icon { width: 16px; height: 16px; color: var(--accent); flex-shrink: 0; }
 
     .input-area { padding: 16px 24px 24px; position: relative; z-index: 20; }
-    .input-wrapper { max-width: 760px; margin: 0 auto; }
+    .input-row { display: flex; align-items: flex-end; gap: 8px; max-width: 800px; margin: 0 auto; }
+    .input-wrapper { flex: 1; min-width: 0; }
     .input-box-container { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid var(--border-color-strong); border-radius: 16px; display: flex; flex-direction: column; transition: border-color 0.2s ease; }
     .input-box-container:focus-within { border-color: rgba(255,255,255,0.15); }
     .input-box { width: 100%; background: transparent; border: none; padding: 16px 18px 10px; color: var(--text-primary); font-size: 15px; font-family: inherit; resize: none; outline: none; line-height: 1.6; max-height: 260px; min-height: 88px; overflow-y: auto; scrollbar-width: none; }
@@ -214,6 +222,40 @@
     .attach-btn:hover { background: rgba(255,255,255,0.08); color: var(--text-primary); border-color: rgba(255,255,255,0.15); }
     .attach-btn svg { width: 16px; height: 16px; }
 
+    /* File chips in input */
+    .file-chips-wrap { display: none; padding: 10px 14px 0; gap: 6px; flex-wrap: wrap; }
+    .file-chips-wrap.has-files { display: flex; }
+    .file-chip { display: flex; align-items: center; gap: 7px; padding: 5px 8px 5px 10px; border-radius: 8px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color-strong); max-width: 200px; animation: chipIn 0.2s ease; }
+    @keyframes chipIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: none; } }
+    .file-chip-icon { width: 20px; height: 20px; border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; flex-shrink: 0; }
+    .file-chip-icon.ext-pdf { background: rgba(239,68,68,0.15); color: #f87171; }
+    .file-chip-icon.ext-doc { background: rgba(59,130,246,0.15); color: #60a5fa; }
+    .file-chip-icon.ext-txt { background: rgba(168,85,247,0.15); color: #c084fc; }
+    .file-chip-icon.ext-csv { background: rgba(34,197,94,0.15); color: #4ade80; }
+    .file-chip-icon.ext-json { background: rgba(234,179,8,0.15); color: #fbbf24; }
+    .file-chip-icon.ext-md { background: rgba(20,184,166,0.15); color: #2dd4bf; }
+    .file-chip-icon.ext-other { background: rgba(255,255,255,0.06); color: var(--text-muted); }
+    .file-chip-name { font-size: 12px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; flex: 1; }
+    .file-chip-remove { width: 16px; height: 16px; border: none; background: transparent; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 12px; border-radius: 4px; flex-shrink: 0; transition: all 0.15s; padding: 0; }
+    .file-chip-remove:hover { color: var(--error-color); background: rgba(239,68,68,0.1); }
+
+    /* File chips in user messages */
+    .msg-files { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+    .msg-file-chip { display: flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 8px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08); font-size: 12px; color: var(--text-secondary); }
+    .msg-file-chip-icon { width: 18px; height: 18px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; flex-shrink: 0; }
+
+    /* Download card in AI messages */
+    .download-card { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 12px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.09); margin-top: 14px; transition: all 0.2s ease; cursor: pointer; text-decoration: none; }
+    .download-card:hover { background: rgba(255,255,255,0.07); border-color: rgba(196,116,142,0.25); transform: translateY(-1px); }
+    .download-card-icon { width: 36px; height: 36px; border-radius: 9px; background: var(--accent-soft); border: 1px solid rgba(196,116,142,0.15); display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: var(--accent); }
+    .download-card-icon svg { width: 17px; height: 17px; }
+    .download-card-info { flex: 1; min-width: 0; }
+    .download-card-name { font-size: 13px; font-weight: 500; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .download-card-meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .download-card-arrow { color: var(--text-muted); flex-shrink: 0; }
+    .download-card-arrow svg { width: 14px; height: 14px; }
+
+    /* Multi-image preview */
     .img-preview-wrap { display: none; padding: 10px 14px 0; gap: 8px; flex-wrap: wrap; }
     .img-preview-wrap.has-img { display: flex; }
     .img-preview-item { position: relative; width: 72px; height: 72px; border-radius: 10px; overflow: hidden; border: 1px solid var(--border-color-strong); flex-shrink: 0; }
@@ -221,7 +263,9 @@
     .img-preview-remove { position: absolute; top: 3px; right: 3px; width: 18px; height: 18px; border-radius: 50%; border: none; background: rgba(0,0,0,0.7); color: #fff; font-size: 11px; cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1; transition: background 0.15s ease; }
     .img-preview-remove:hover { background: rgba(239,68,68,0.8); }
 
-    .msg-img { max-width: 280px; max-height: 200px; border-radius: 10px; border: 1px solid var(--border-color); display: block; margin-bottom: 8px; object-fit: cover; cursor: zoom-in; }
+    /* Message images */
+    .msg-imgs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+    .msg-img { max-width: 200px; max-height: 160px; border-radius: 10px; border: 1px solid var(--border-color); display: block; object-fit: cover; cursor: zoom-in; }
 
     .lightbox { position: fixed; inset: 0; background: rgba(0,0,0,0.88); z-index: 300; display: none; align-items: center; justify-content: center; backdrop-filter: blur(8px); cursor: zoom-out; }
     .lightbox.open { display: flex; }
@@ -240,6 +284,42 @@
     .mob-toggle { display: none; position: fixed; top: 16px; left: 16px; z-index: 55; width: 40px; height: 40px; border-radius: 10px; border: 1px solid var(--border-color); background: rgba(10,10,10,0.8); backdrop-filter: blur(10px); color: var(--text-secondary); cursor: pointer; align-items: center; justify-content: center; }
     .mob-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 55; }
     .mob-overlay.active { display: block; }
+
+    /* Scroll to bottom button */
+    .input-row { display: flex; align-items: flex-end; gap: 8px; }
+    .scroll-down-btn {
+      width: 36px;
+      height: 36px;
+      flex-shrink: 0;
+      border-radius: 10px;
+      border: 1px solid var(--border-color-strong);
+      background: rgba(255,255,255,0.04);
+      color: var(--text-muted);
+      cursor: pointer;
+      pointer-events: none;
+      opacity: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transform: scale(0.85);
+      transition: opacity 0.22s ease, transform 0.22s cubic-bezier(0.16,1,0.3,1), background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+      margin-bottom: 10px;
+    }
+    .scroll-down-btn.visible {
+      opacity: 1;
+      pointer-events: auto;
+      transform: scale(1);
+    }
+    .scroll-down-btn:hover {
+      background: rgba(255,255,255,0.08);
+      color: var(--accent);
+      border-color: rgba(196,116,142,0.25);
+    }
+    .scroll-down-btn svg {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+    }
 
     .intro-bg { opacity: 0; }
     .intro-sb { opacity: 0; transform: translateX(-20px); }
@@ -318,40 +398,50 @@
     </div>
 
     <div class="input-area intro-ub">
-      <div class="input-wrapper">
-        <div class="input-box-container">
-          <div class="img-preview-wrap" id="imgPreviewWrap"></div>
-          <textarea class="input-box" id="userInput" placeholder="Ask anything..." rows="1" autofocus></textarea>
-          <input type="file" id="imgFileInput" accept="image/*" style="display:none">
-          <div class="input-bottom">
-            <div class="input-left">
-              <span class="input-brand">Core AI</span>
-              <div class="model-dd" id="modelDd">
-                <button class="model-dd-btn" id="modelDdBtn" type="button">
-                  <span id="modelDdLabel">claude-sonnet-4.5</span>
-                  <svg class="dd-arrow" width="12" height="12" fill="none" viewBox="0 0 12 12" stroke="currentColor" stroke-width="2"><path d="M3 4.5l3 3 3-3"/></svg>
-                </button>
-                <div class="model-dd-panel" id="modelDdPanel">
-                  <div class="model-opt" data-value="claude-sonnet-4-5">claude-sonnet-4.5</div>
-                  <div class="model-opt" data-value="claude-opus-4-5">claude-opus-4.5</div>
-                  <div class="model-opt" data-value="deepseek/deepseek-chat">deepseek-v3.2</div>
-                  <div class="model-opt" data-value="google/gemini-2.5-flash">gemini-2.5-flash</div>
+      <div class="input-row">
+        <div class="input-wrapper">
+          <div class="input-box-container">
+            <div class="img-preview-wrap" id="imgPreviewWrap"></div>
+            <div class="file-chips-wrap" id="fileChipsWrap"></div>
+            <textarea class="input-box" id="userInput" placeholder="Ask anything..." rows="1" autofocus></textarea>
+            <input type="file" id="imgFileInput" accept="image/*" multiple style="display:none">
+            <input type="file" id="fileInput" accept=".txt,.pdf,.docx,.doc,.csv,.json,.md,.html,.xml,.rtf" multiple style="display:none">
+            <div class="input-bottom">
+              <div class="input-left">
+                <span class="input-brand">Core AI</span>
+                <div class="model-dd" id="modelDd">
+                  <button class="model-dd-btn" id="modelDdBtn" type="button">
+                    <span id="modelDdLabel">claude-sonnet-4.5</span>
+                    <svg class="dd-arrow" width="12" height="12" fill="none" viewBox="0 0 12 12" stroke="currentColor" stroke-width="2"><path d="M3 4.5l3 3 3-3"/></svg>
+                  </button>
+                  <div class="model-dd-panel" id="modelDdPanel">
+                    <div class="model-opt" data-value="claude-sonnet-4-5">claude-sonnet-4.5</div>
+                    <div class="model-opt" data-value="claude-opus-4-5">claude-opus-4.5</div>
+                    <div class="model-opt" data-value="deepseek/deepseek-chat">deepseek-v3.2</div>
+                    <div class="model-opt" data-value="google/gemini-2.5-flash">gemini-2.5-flash</div>
+                  </div>
                 </div>
               </div>
-            </div>
-            <div style="display:flex;gap:6px;align-items:center;">
-              <button class="attach-btn" id="attachBtn" title="Attach image (Gemini only)">
-                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13"/></svg>
-              </button>
-              <button class="stop-btn" id="stopBtn" title="Stop (Esc)">
-                <svg fill="currentColor" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="2"/></svg>
-              </button>
-              <button class="send-btn" id="sendBtn" disabled>
-                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 10.5L12 3m0 0l7.5 7.5M12 3v18"/></svg>
-              </button>
+              <div style="display:flex;gap:6px;align-items:center;">
+                <button class="attach-btn" id="fileAttachBtn" title="Attach file (TXT, PDF, DOCX, CSV…)">
+                  <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>
+                </button>
+                <button class="attach-btn" id="attachBtn" title="Attach images (Gemini only)">
+                  <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13"/></svg>
+                </button>
+                <button class="stop-btn" id="stopBtn" title="Stop (Esc)">
+                  <svg fill="currentColor" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="2"/></svg>
+                </button>
+                <button class="send-btn" id="sendBtn" disabled>
+                  <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 10.5L12 3m0 0l7.5 7.5M12 3v18"/></svg>
+                </button>
+              </div>
             </div>
           </div>
         </div>
+        <button class="scroll-down-btn" id="scrollDownBtn" title="Scroll to bottom">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/></svg>
+        </button>
       </div>
       <div class="input-footer">AI can make mistakes · Esc to stop generation</div>
     </div>
@@ -359,10 +449,35 @@
 
   <script>
   (() => {
-    const SYS = 'You are a helpful, friendly, and knowledgeable AI assistant. Provide clear, accurate, well-structured responses. Use markdown code blocks with language tags for code. Respond in the same language the user writes in.';
+    const SYS = `You are a helpful, friendly, and knowledgeable AI assistant. Provide clear, accurate, well-structured responses. Use markdown code blocks with language tags for code. Respond in the same language the user writes in.
 
-    if (localStorage.getItem('ai_ver') !== 'v15') {
-      localStorage.setItem('ai_ver', 'v15');
+IMPORTANT — FILE OUTPUT RULES:
+When the user asks you to create, write, edit, rewrite, complete, or generate a document (homework, essay, letter, report, etc.), you MUST include the full file content at the END of your response, wrapped in a <FILE> tag like this:
+<FILE filename="document.docx">
+Full document text here
+</FILE>
+
+STRICT rules for content inside <FILE> tags:
+- NO markdown (no ###, no **, no *, no -, no \`\`\`, no emojis, no bullet symbols)
+- Write in clean plain text, as if typing in Word
+- Separate paragraphs with a blank line
+- For section titles, write them on their own line in ALL CAPS or followed by a colon, naturally
+- Preserve the original document structure when editing uploaded files
+- The filename extension should match what the user needs (.docx for Word, .txt for text, .csv for spreadsheets, etc.)
+
+Example of correct file output:
+<FILE filename="homework.docx">
+INTRODUCTION
+
+This essay explores the topic of renewable energy and its impact on modern society.
+
+MAIN BODY
+
+Solar panels have become increasingly affordable over the past decade...
+</FILE>`;
+
+    if (localStorage.getItem('ai_ver') !== 'v16') {
+      localStorage.setItem('ai_ver', 'v16');
       localStorage.removeItem('ai_model');
     }
     let model    = localStorage.getItem('ai_model') || 'claude-sonnet-4-5';
@@ -370,7 +485,10 @@
     let curId    = null;
     let genning  = false;
     let stopFlag = false;
-    let attachedImg = null;
+    // Multi-image support: array of {dataUrl, mimeType, base64}
+    let attachedImgs = [];
+    // File support: array of {name, ext, content, size}
+    let attachedFiles = [];
 
     async function waitForPuter(timeout = 10000) {
       return new Promise((resolve, reject) => {
@@ -389,7 +507,6 @@
       catch { return false; }
     }
 
-    // Только Gemini поддерживает изображения через puter.js
     function isVision(m) { return m.includes('gemini'); }
 
     const sidebar     = document.getElementById('sidebar');
@@ -405,8 +522,11 @@
     const modelLbl    = document.getElementById('modelDdLabel');
     const modelPanel  = document.getElementById('modelDdPanel');
     const attachBtn      = document.getElementById('attachBtn');
+    const fileAttachBtn  = document.getElementById('fileAttachBtn');
     const imgFileInput   = document.getElementById('imgFileInput');
+    const fileInput      = document.getElementById('fileInput');
     const imgPreviewWrap = document.getElementById('imgPreviewWrap');
+    const fileChipsWrap  = document.getElementById('fileChipsWrap');
     const lightbox       = document.getElementById('lightbox');
     const lightboxImg    = document.getElementById('lightboxImg');
 
@@ -416,7 +536,8 @@
       modelPanel.querySelectorAll('.model-opt').forEach(o => o.classList.toggle('selected', o.dataset.value === v));
       const canVision = isVision(v);
       attachBtn.classList.toggle('visible', canVision);
-      if (!canVision && attachedImg) clearImg();
+      fileAttachBtn.classList.add('visible');
+      if (!canVision && attachedImgs.length) clearImgs();
     }
     setModel(model);
     modelDdBtn.addEventListener('click', e => { e.stopPropagation(); modelDd.classList.toggle('open'); });
@@ -476,33 +597,40 @@
 
     function setGen(v) {
       genning = v;
-      sendBtn.disabled = v || !userInput.value.trim();
+      sendBtn.disabled = v || (!userInput.value.trim() && !attachedImgs.length);
       v ? (sendBtn.classList.add('hidden'), stopBtn.classList.add('visible'))
         : (sendBtn.classList.remove('hidden'), stopBtn.classList.remove('visible'));
     }
     stopBtn.addEventListener('click', () => { stopFlag = true; });
 
-    function clearImg() {
-      attachedImg = null;
-      imgPreviewWrap.innerHTML = '';
-      imgPreviewWrap.classList.remove('has-img');
-      sendBtn.disabled = (!userInput.value.trim() && !attachedImg) || genning;
+    // --- Multi-image helpers ---
+    function clearImgs() {
+      attachedImgs = [];
+      renderImgPreviews();
+      sendBtn.disabled = (!userInput.value.trim() && !attachedImgs.length) || genning;
     }
 
-    function showImgPreview(dataUrl) {
+    function renderImgPreviews() {
       imgPreviewWrap.innerHTML = '';
-      const item = document.createElement('div');
-      item.className = 'img-preview-item';
-      const img = document.createElement('img');
-      img.src = dataUrl;
-      const rm = document.createElement('button');
-      rm.className = 'img-preview-remove';
-      rm.innerHTML = '✕';
-      rm.title = 'Remove image';
-      rm.addEventListener('click', clearImg);
-      item.appendChild(img); item.appendChild(rm);
-      imgPreviewWrap.appendChild(item);
+      if (!attachedImgs.length) { imgPreviewWrap.classList.remove('has-img'); return; }
       imgPreviewWrap.classList.add('has-img');
+      attachedImgs.forEach((img, idx) => {
+        const item = document.createElement('div');
+        item.className = 'img-preview-item';
+        const imgEl = document.createElement('img');
+        imgEl.src = img.dataUrl;
+        const rm = document.createElement('button');
+        rm.className = 'img-preview-remove';
+        rm.innerHTML = '✕';
+        rm.title = 'Remove image';
+        rm.addEventListener('click', () => {
+          attachedImgs.splice(idx, 1);
+          renderImgPreviews();
+          sendBtn.disabled = (!userInput.value.trim() && !attachedImgs.length) || genning;
+        });
+        item.appendChild(imgEl); item.appendChild(rm);
+        imgPreviewWrap.appendChild(item);
+      });
     }
 
     function compressImage(dataUrl, mimeType, maxPx = 1280, quality = 0.85) {
@@ -525,56 +653,259 @@
       });
     }
 
+    async function addImageFile(file) {
+      if (file.size > 20 * 1024 * 1024) { toast('Image too large (max 20MB)', 'error'); return; }
+      return new Promise(resolve => {
+        const reader = new FileReader();
+        reader.onload = async e => {
+          const dataUrl = e.target.result;
+          const mimeType = file.type || 'image/jpeg';
+          const base64 = await compressImage(dataUrl, mimeType);
+          attachedImgs.push({ dataUrl, mimeType, base64 });
+          renderImgPreviews();
+          sendBtn.disabled = false;
+          resolve();
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
     attachBtn.addEventListener('click', () => {
       if (!isVision(model)) { toast('Image upload only for Gemini', 'info'); return; }
       imgFileInput.click();
     });
 
-    imgFileInput.addEventListener('change', () => {
-      const file = imgFileInput.files[0];
-      if (!file) return;
-      if (file.size > 20 * 1024 * 1024) { toast('Image too large (max 20MB)', 'error'); return; }
-      const reader = new FileReader();
-      reader.onload = async e => {
-        const dataUrl = e.target.result;
-        const mimeType = file.type || 'image/jpeg';
-        const base64 = await compressImage(dataUrl, mimeType);
-        attachedImg = { dataUrl, mimeType, base64 };
-        showImgPreview(dataUrl);
+    // --- File (document) handling ---
+    function getFileExt(name) { return (name.split('.').pop() || '').toLowerCase(); }
+    function extClass(ext) {
+      if (['pdf'].includes(ext)) return 'ext-pdf';
+      if (['doc','docx','rtf'].includes(ext)) return 'ext-doc';
+      if (['txt','text'].includes(ext)) return 'ext-txt';
+      if (['csv'].includes(ext)) return 'ext-csv';
+      if (['json'].includes(ext)) return 'ext-json';
+      if (['md','markdown'].includes(ext)) return 'ext-md';
+      return 'ext-other';
+    }
+
+    function renderFileChips() {
+      fileChipsWrap.innerHTML = '';
+      if (!attachedFiles.length) { fileChipsWrap.classList.remove('has-files'); return; }
+      fileChipsWrap.classList.add('has-files');
+      attachedFiles.forEach((f, idx) => {
+        const chip = document.createElement('div');
+        chip.className = 'file-chip';
+        const ext = getFileExt(f.name);
+        chip.innerHTML = `
+          <div class="file-chip-icon ${extClass(ext)}">${ext.toUpperCase().slice(0,3)}</div>
+          <span class="file-chip-name" title="${esc(f.name)}">${esc(f.name)}</span>
+          <button class="file-chip-remove" title="Remove">✕</button>`;
+        chip.querySelector('.file-chip-remove').addEventListener('click', () => {
+          attachedFiles.splice(idx, 1);
+          renderFileChips();
+          sendBtn.disabled = (!userInput.value.trim() && !attachedFiles.length && !attachedImgs.length) || genning;
+        });
+        fileChipsWrap.appendChild(chip);
+      });
+    }
+
+    async function extractTextFromFile(file) {
+      const ext = getFileExt(file.name);
+      if (['txt','md','csv','json','html','xml','rtf','text','markdown'].includes(ext)) {
+        return new Promise((res, rej) => {
+          const r = new FileReader();
+          r.onload = e => res(e.target.result);
+          r.onerror = () => rej(new Error('Failed to read file'));
+          r.readAsText(file, 'UTF-8');
+        });
+      }
+      if (ext === 'pdf') {
+        return new Promise(async (res, rej) => {
+          try {
+            const pdfjsLib = window['pdfjs-dist/build/pdf'];
+            if (!pdfjsLib) { res('[PDF content - pdf.js not loaded]'); return; }
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+            const ab = await file.arrayBuffer();
+            const pdf = await pdfjsLib.getDocument({ data: ab }).promise;
+            let text = '';
+            for (let i = 1; i <= pdf.numPages; i++) {
+              const page = await pdf.getPage(i);
+              const tc = await page.getTextContent();
+              text += tc.items.map(s => s.str).join(' ') + '\n\n';
+            }
+            res(text.trim());
+          } catch(e) { rej(e); }
+        });
+      }
+      if (['doc','docx'].includes(ext)) {
+        return new Promise(async (res, rej) => {
+          try {
+            if (typeof mammoth === 'undefined') { res('[DOCX content - mammoth.js not loaded]'); return; }
+            const ab = await file.arrayBuffer();
+            const result = await mammoth.extractRawText({ arrayBuffer: ab });
+            res(result.value.trim());
+          } catch(e) { rej(e); }
+        });
+      }
+      return `[File: ${file.name} — format not supported for text extraction]`;
+    }
+
+    async function addDocFile(file) {
+      if (file.size > 50 * 1024 * 1024) { toast('File too large (max 50MB)', 'error'); return; }
+      const loadingToast = () => toast(`Reading ${file.name}…`, 'info');
+      try {
+        loadingToast();
+        const content = await extractTextFromFile(file);
+        const ext = getFileExt(file.name);
+        attachedFiles.push({ name: file.name, ext, content, size: file.size });
+        renderFileChips();
         sendBtn.disabled = false;
-      };
-      reader.readAsDataURL(file);
+        toast(`${file.name} — ready`, 'success');
+      } catch(e) {
+        toast(`Failed to read ${file.name}`, 'error');
+      }
+    }
+
+    fileAttachBtn.addEventListener('click', () => { fileInput.click(); });
+    fileInput.addEventListener('change', async () => {
+      if (!fileInput.files.length) return;
+      for (const file of Array.from(fileInput.files)) await addDocFile(file);
+      fileInput.value = '';
+    });
+
+    // --- Generate and download output file from AI response ---
+    function stripMarkdown(text) {
+      return text
+        .replace(/^#{1,6}\s*/gm, '')        // headings
+        .replace(/\*\*(.+?)\*\*/g, '$1')    // bold
+        .replace(/\*(.+?)\*/g, '$1')        // italic
+        .replace(/`{1,3}[^`]*`{1,3}/g, '') // inline code / code blocks
+        .replace(/^```[\s\S]*?```$/gm, '')  // fenced code blocks
+        .replace(/^[\-\*\+]\s+/gm, '')      // unordered list markers
+        .replace(/^\d+\.\s+/gm, '')         // ordered list markers
+        .replace(/^>\s+/gm, '')             // blockquotes
+        .replace(/\[(.+?)\]\(.+?\)/g, '$1') // links
+        .replace(/!\[.*?\]\(.+?\)/g, '')    // images
+        .replace(/_{1,2}(.+?)_{1,2}/g, '$1') // underscores
+        .replace(/~~(.+?)~~/g, '$1')        // strikethrough
+        .replace(/[\u{1F300}-\u{1FFFF}]/gu, '') // emojis
+        .trim();
+    }
+
+    async function downloadAsDocx(filename, text) {
+      if (typeof docx === 'undefined') {
+        // Fallback to txt
+        downloadAsTxt(filename.replace(/\.docx$/i, '.txt'), text);
+        return;
+      }
+      const { Document, Packer, Paragraph, TextRun, HeadingLevel } = docx;
+      const paragraphs = text.split(/\n\n+/).map(para => {
+        const line = para.trim();
+        if (!line) return new Paragraph({});
+        // Detect headings: all caps line or ends with colon and short
+        const isHeading = (/^[A-ZА-ЯЁ][A-ZА-ЯЁ\s\d]{3,}$/.test(line) || (line.endsWith(':') && line.length < 60));
+        return new Paragraph({
+          heading: isHeading ? HeadingLevel.HEADING_2 : undefined,
+          children: [new TextRun({ text: line, size: 24, font: 'Times New Roman' })]
+        });
+      });
+      const doc = new Document({ sections: [{ properties: {}, children: paragraphs }] });
+      const blob = await Packer.toBlob(doc);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = filename; a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+    }
+
+    function downloadAsTxt(filename, text) {
+      const blob = new Blob([text], { type: 'text/plain; charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = filename; a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+    }
+
+    function downloadFile(filename, content) {
+      const ext = getFileExt(filename);
+      const clean = stripMarkdown(content);
+      if (ext === 'docx' || ext === 'doc') {
+        downloadAsDocx(filename, clean);
+      } else if (ext === 'csv') {
+        const blob = new Blob([content], { type: 'text/csv; charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = filename; a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 5000);
+      } else if (ext === 'json') {
+        const blob = new Blob([content], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = filename; a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 5000);
+      } else {
+        downloadAsTxt(filename, clean);
+      }
+    }
+
+    // Parse <FILE filename="...">...</FILE> blocks from AI response
+    function parseFileBlocks(text) {
+      const blocks = [];
+      const re = /<FILE\s+filename="([^"]+)">([\s\S]*?)<\/FILE>/gi;
+      let match;
+      while ((match = re.exec(text)) !== null) {
+        blocks.push({ filename: match[1], content: match[2].trim() });
+      }
+      return blocks;
+    }
+
+    // Remove FILE tags from visible text
+    function removeFileBlocks(text) {
+      return text.replace(/<FILE\s+filename="[^"]+">([\s\S]*?)<\/FILE>/gi, '').trim();
+    }
+
+    // Append download card to a message element
+    function appendDownloadCards(msgEl, fileBlocks) {
+      const bodyEl = msgEl.querySelector('.msg-body');
+      fileBlocks.forEach(fb => {
+        const ext = getFileExt(fb.filename);
+        const card = document.createElement('a');
+        card.className = 'download-card';
+        card.href = '#';
+        card.innerHTML = `
+          <div class="download-card-icon">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m.75 12l3 3m0 0l3-3m-3 3v-6m-1.5-9H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>
+          </div>
+          <div class="download-card-info">
+            <div class="download-card-name">${esc(fb.filename)}</div>
+            <div class="download-card-meta">Нажмите чтобы скачать · ${ext.toUpperCase()}</div>
+          </div>
+          <div class="download-card-arrow"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg></div>`;
+        card.addEventListener('click', e => {
+          e.preventDefault();
+          downloadFile(fb.filename, fb.content);
+          toast(`Скачивание: ${fb.filename}`, 'success');
+        });
+        bodyEl.appendChild(card);
+      });
+    }
+
+    imgFileInput.addEventListener('change', async () => {
+      if (!imgFileInput.files.length) return;
+      const files = Array.from(imgFileInput.files);
+      for (const file of files) await addImageFile(file);
       imgFileInput.value = '';
     });
 
     lightbox.addEventListener('click', () => lightbox.classList.remove('open'));
     document.addEventListener('keydown', e => { if (e.key === 'Escape') lightbox.classList.remove('open'); });
 
-    document.addEventListener('paste', e => {
+    document.addEventListener('paste', async e => {
       const items = e.clipboardData?.items;
       if (!items) return;
       for (const item of items) {
         if (item.type.startsWith('image/')) {
           e.preventDefault();
-          if (!isVision(model)) {
-            toast('Switch to Gemini to paste images', 'info');
-            return;
-          }
+          if (!isVision(model)) { toast('Switch to Gemini to paste images', 'info'); return; }
           const file = item.getAsFile();
           if (!file) return;
-          if (file.size > 20 * 1024 * 1024) { toast('Image too large (max 20MB)', 'error'); return; }
-          const reader = new FileReader();
-          reader.onload = async ev => {
-            const dataUrl = ev.target.result;
-            const mimeType = file.type || 'image/png';
-            const base64 = await compressImage(dataUrl, mimeType);
-            attachedImg = { dataUrl, mimeType, base64 };
-            showImgPreview(dataUrl);
-            sendBtn.disabled = false;
-            toast('Image pasted from clipboard', 'success');
-            userInput.focus();
-          };
-          reader.readAsDataURL(file);
+          await addImageFile(file);
+          toast('Image pasted from clipboard', 'success');
+          userInput.focus();
           return;
         }
       }
@@ -583,12 +914,12 @@
     userInput.addEventListener('input', () => {
       userInput.style.height = 'auto';
       userInput.style.height = Math.min(userInput.scrollHeight, 200) + 'px';
-      sendBtn.disabled = (!userInput.value.trim() && !attachedImg) || genning;
+      sendBtn.disabled = (!userInput.value.trim() && !attachedImgs.length && !attachedFiles.length) || genning;
     });
     userInput.addEventListener('keydown', e => {
-      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (userInput.value.trim() && !genning) send(); }
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if ((userInput.value.trim() || attachedImgs.length || attachedFiles.length) && !genning) send(); }
     });
-    sendBtn.addEventListener('click', () => { if (userInput.value.trim() && !genning) send(); });
+    sendBtn.addEventListener('click', () => { if ((userInput.value.trim() || attachedImgs.length || attachedFiles.length) && !genning) send(); });
     document.querySelectorAll('.suggestion-card').forEach(c => {
       c.addEventListener('click', () => { userInput.value = c.dataset.prompt; userInput.dispatchEvent(new Event('input')); send(); });
     });
@@ -630,7 +961,7 @@
       chatArea.classList.add('active');
       welcome.classList.add('hidden');
       msgs.innerHTML = '';
-      conv.messages.forEach(m => appendMsg(m.role, m.content, m._img || null, false));
+      conv.messages.forEach(m => appendMsg(m.role, m.content, m._imgs || null, m._files || null, false));
       requestAnimationFrame(() => { chatArea.classList.add('visible'); buildNavStrips(); });
       renderHist(); scrollBot(); closeMob(); sidebar.classList.remove('expanded');
     }
@@ -662,7 +993,7 @@
       });
     }
 
-    function appendMsg(role, content, imgData=null, animate=true) {
+    function appendMsg(role, content, imgsData=null, filesData=null, animate=true) {
       const el = document.createElement('div');
       el.className = 'message ' + (role==='user' ? 'user-msg' : 'ai-msg');
       if (!animate) el.style.animation = 'none';
@@ -670,20 +1001,34 @@
       const t = now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
       const mShort = model.split('/').pop();
       if (role === 'user') {
-        const imgHtml = imgData ? `<img class="msg-img" src="${imgData.dataUrl}" alt="attached image">` : '';
-        el.innerHTML = `<div class="msg-body">${imgHtml}${content ? esc(content) : ''}</div><span class="msg-time">${t}</span>`;
-        if (imgData) {
-          el.querySelector('.msg-img')?.addEventListener('click', () => {
-            lightboxImg.src = imgData.dataUrl;
+        let imgHtml = '';
+        if (imgsData && imgsData.length) {
+          imgHtml = `<div class="msg-imgs">` + imgsData.map(img => `<img class="msg-img" src="${img.dataUrl}" alt="attached image">`).join('') + `</div>`;
+        }
+        let fileHtml = '';
+        if (filesData && filesData.length) {
+          fileHtml = `<div class="msg-files">` + filesData.map(f => {
+            const ext = getFileExt(f.name);
+            return `<div class="msg-file-chip"><div class="msg-file-chip-icon ${extClass(ext)}">${ext.toUpperCase().slice(0,3)}</div>${esc(f.name)}</div>`;
+          }).join('') + `</div>`;
+        }
+        el.innerHTML = `<div class="msg-body">${imgHtml}${fileHtml}${content ? esc(content) : ''}</div><span class="msg-time">${t}</span>`;
+        el.querySelectorAll('.msg-img').forEach((imgEl, i) => {
+          imgEl.addEventListener('click', () => {
+            lightboxImg.src = imgsData[i].dataUrl;
             lightbox.classList.add('open');
           });
-        }
+        });
       } else {
+        // Strip <FILE> blocks from visible content
+        const visibleContent = removeFileBlocks(content);
+        const fileBlocks = parseFileBlocks(content);
         el.innerHTML = `
           <div class="msg-header">${AI_ICON}<span class="msg-sender">Core AI</span><span class="model-badge">${mShort}</span></div>
-          <div class="msg-body">${md(content)}</div>
+          <div class="msg-body">${visibleContent ? md(visibleContent) : '<p style="color:var(--text-muted)">—</p>'}</div>
           <span class="msg-time">${t}</span>`;
         copify(el);
+        if (fileBlocks.length) appendDownloadCards(el, fileBlocks);
       }
       msgs.appendChild(el); return el;
     }
@@ -731,7 +1076,19 @@
       navStrips.querySelectorAll('.nav-strip').forEach((s, i) => s.classList.toggle('active', i === closest));
     }
 
-    chatArea.addEventListener('scroll', () => { updateActiveStrip(); });
+    const scrollDownBtn = document.getElementById('scrollDownBtn');
+
+    function updateScrollDownBtn() {
+      if (!chatArea.classList.contains('active')) { scrollDownBtn.classList.remove('visible'); return; }
+      const distFromBottom = chatArea.scrollHeight - chatArea.scrollTop - chatArea.clientHeight;
+      scrollDownBtn.classList.toggle('visible', distFromBottom > 120);
+    }
+
+    scrollDownBtn.addEventListener('click', () => {
+      chatArea.scrollTo({ top: chatArea.scrollHeight, behavior: 'smooth' });
+    });
+
+    chatArea.addEventListener('scroll', () => { updateActiveStrip(); updateScrollDownBtn(); });
 
     function showChat() {
       if (!welcome.classList.contains('hidden')) {
@@ -750,6 +1107,7 @@
 
     function hideChat() {
       chatArea.classList.remove('visible');
+      scrollDownBtn.classList.remove('visible');
       setTimeout(() => {
         chatArea.classList.remove('active');
         welcome.classList.remove('hidden');
@@ -758,7 +1116,7 @@
       }, 200);
     }
 
-    function scrollBot() { requestAnimationFrame(() => { chatArea.scrollTop = chatArea.scrollHeight; updateActiveStrip(); }); }
+    function scrollBot() { requestAnimationFrame(() => { chatArea.scrollTop = chatArea.scrollHeight; updateActiveStrip(); updateScrollDownBtn(); }); }
 
     function restoreUserMsg(conv) {
       if (!conv || !conv.messages.length) return;
@@ -769,9 +1127,9 @@
         userInput.style.height = 'auto';
         userInput.style.height = Math.min(userInput.scrollHeight, 200) + 'px';
       }
-      if (last._img && !attachedImg) {
-        attachedImg = { dataUrl: last._img.dataUrl, mimeType: last._img.mimeType, base64: last._img.base64 };
-        showImgPreview(last._img.dataUrl);
+      if (last._imgs && last._imgs.length && !attachedImgs.length) {
+        attachedImgs = last._imgs.map(img => ({dataUrl: img.dataUrl, mimeType: img.mimeType, base64: img.base64}));
+        renderImgPreviews();
       }
       sendBtn.disabled = false;
       conv.messages.pop();
@@ -780,48 +1138,61 @@
       if (lastUserEl) lastUserEl.remove();
     }
 
-    async function send(retryArg=null, retryImgArg=null) {
+    async function send(retryArg=null, retryImgsArg=null, retryFilesArg=null) {
       const text = retryArg || userInput.value.trim();
-      const img  = retryImgArg || attachedImg;
-      if ((!text && !img) || genning) return;
+      const imgs = retryImgsArg || [...attachedImgs];
+      const files = retryFilesArg || [...attachedFiles];
+      if ((!text && !imgs.length && !files.length) || genning) return;
 
       const isPuterReady = await ensurePuterReady();
-      if (!isPuterReady) {
-        toast('AI service unavailable. Please refresh the page.', 'error');
-        return;
-      }
+      if (!isPuterReady) { toast('AI service unavailable. Please refresh the page.', 'error'); return; }
 
       setGen(true);
       stopFlag = false;
 
-      const sentImg = img;
       if (!retryArg) {
-        userInput.value=''; userInput.style.height='auto';
-        clearImg();
+        userInput.value = ''; userInput.style.height = 'auto';
+        clearImgs();
+        attachedFiles = []; renderFileChips();
       }
-      if (!curId) createConv(text || '(image)');
+      if (!curId) createConv(text || (files.length ? files[0].name : '(image)'));
       const conv = curConv();
 
       if (!retryArg) {
-        const storedContent = text || '[image]';
-        conv.messages.push({role:'user', content: storedContent, _img: sentImg ? {dataUrl: sentImg.dataUrl, mimeType: sentImg.mimeType, base64: sentImg.base64} : null});
+        const storedContent = text || (files.length ? `[${files[0].name}]` : '[image]');
+        const storedImgs = imgs.length ? imgs.map(img => ({dataUrl: img.dataUrl, mimeType: img.mimeType, base64: img.base64})) : null;
+        const storedFiles = files.length ? files.map(f => ({name: f.name, ext: f.ext})) : null;
+        conv.messages.push({role:'user', content: storedContent, _imgs: storedImgs, _files: storedFiles});
         saveConvs();
         showChat();
-        appendMsg('user', text, sentImg); scrollBot();
+        appendMsg('user', text, imgs.length ? imgs : null, files.length ? files : null);
+        scrollBot();
         buildNavStrips();
       }
       showThinking();
 
+      // Build the actual message text including file contents
+      let messageText = text;
+      if (files.length) {
+        const fileContext = files.map(f =>
+          `[ATTACHED FILE: ${f.name}]\n${f.content}\n[/ATTACHED FILE]`
+        ).join('\n\n');
+        messageText = fileContext + (text ? `\n\n${text}` : '');
+      }
+
       const puterMessages = [
         {role:'system', content: SYS},
-        ...conv.messages.map(m => {
-          if (m._img && isVision(model)) {
+        ...conv.messages.map((m, i) => {
+          // For the last user message, use messageText with file contents
+          const isLastUser = (i === conv.messages.length - 1 && m.role === 'user');
+          if (m._imgs && m._imgs.length && isVision(model)) {
             const parts = [];
-            if (m.content && m.content !== '[image]') parts.push({type:'text', text: m.content});
-            parts.push({type:'image_url', image_url:{url:`data:${m._img.mimeType};base64,${m._img.base64}`}});
+            const txt = isLastUser ? messageText : m.content;
+            if (txt && txt !== '[image]') parts.push({type:'text', text: txt});
+            m._imgs.forEach(img => parts.push({type:'image_url', image_url:{url:`data:${img.mimeType};base64,${img.base64}`}}));
             return {role: m.role, content: parts};
           }
-          return {role: m.role, content: m.content};
+          return {role: m.role, content: isLastUser ? messageText : m.content};
         })
       ];
 
@@ -839,8 +1210,30 @@
           rafId = null;
           if (content === rendered) return;
           rendered = content;
-          bodyEl.innerHTML = md(content);
-          if (streaming) bodyEl.appendChild(cursor);
+
+          // Strip complete FILE blocks
+          let visibleNow = removeFileBlocks(content);
+
+          // Check if a FILE block has started but not yet closed — hide that tail
+          const partialStart = visibleNow.indexOf('<FILE');
+          let generatingFile = false;
+          if (partialStart !== -1) {
+            visibleNow = visibleNow.slice(0, partialStart).trim();
+            generatingFile = true;
+          }
+
+          bodyEl.innerHTML = visibleNow ? md(visibleNow) : '';
+
+          // Show "Generating file..." placeholder while FILE block is streaming
+          if (streaming && generatingFile) {
+            const gf = document.createElement('div');
+            gf.style.cssText = 'display:flex;align-items:center;gap:8px;margin-top:12px;padding:10px 14px;border-radius:10px;background:rgba(196,116,142,0.06);border:1px solid rgba(196,116,142,0.15);';
+            gf.innerHTML = `<div style="display:flex;gap:4px;">${[0,150,300].map(d=>`<span style="width:5px;height:5px;border-radius:50%;background:var(--accent);display:inline-block;animation:dotPulse 1.2s ease-in-out ${d}ms infinite;"></span>`).join('')}</div><span style="font-size:13px;color:var(--text-secondary);">Generating file…</span>`;
+            bodyEl.appendChild(gf);
+          } else if (streaming) {
+            bodyEl.appendChild(cursor);
+          }
+
           copify(msgEl);
           scrollBot();
         }
@@ -875,8 +1268,13 @@
           rmThinking();
           if (!stopFlag) toast('Empty response, try again', 'info');
         } else if (content.trim()) {
-          bodyEl.innerHTML = md(content);
-          copify(msgEl); scrollBot();
+          // Parse and remove FILE blocks for display
+          const visibleContent = removeFileBlocks(content);
+          const fileBlocks = parseFileBlocks(content);
+          bodyEl.innerHTML = visibleContent ? md(visibleContent) : '<p style="color:var(--text-muted)">—</p>';
+          copify(msgEl);
+          if (fileBlocks.length) appendDownloadCards(msgEl, fileBlocks);
+          scrollBot();
           conv.messages.push({role:'assistant', content}); saveConvs();
           buildNavStrips();
         } else {
@@ -892,7 +1290,6 @@
         msgs.querySelector('.ai-msg:last-child')?.remove();
         restoreUserMsg(conv);
 
-        // Исправленное извлечение текста ошибки
         let errorMessage = '';
         if (typeof err === 'string') {
           errorMessage = err;
@@ -925,7 +1322,7 @@
       }
 
       setGen(false); stopFlag = false;
-      sendBtn.disabled = !userInput.value.trim() && !attachedImg;
+      sendBtn.disabled = !userInput.value.trim() && !attachedImgs.length && !attachedFiles.length;
       userInput.focus();
     }
 
@@ -934,7 +1331,7 @@
       for (let i = errMsgs.length - 1; i >= 0; i--) {
         if (errMsgs[i].querySelector('.retry-btn')) { errMsgs[i].remove(); break; }
       }
-      if (userInput.value.trim() || attachedImg) send();
+      if (userInput.value.trim() || attachedImgs.length) send();
     };
 
     document.addEventListener('keydown', e => {
